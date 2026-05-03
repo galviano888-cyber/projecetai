@@ -562,13 +562,13 @@ export default function App() {
                     {/* Result header */}
                     <div className="flex items-start justify-between gap-4 mb-5">
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+                        <p className="text-xs font-semibold uppercase tracking-widest text-black/50 mb-1">
                           Rekomendasi Sistem Pakar
                         </p>
                         <h3 className={`text-2xl font-extrabold tracking-tight ${statusColors[result.status].text}`}>
                           {result.recommendation}
                         </h3>
-                        <p className="text-sm text-muted-foreground mt-0.5">{result.commodity}</p>
+                        <p className="text-sm text-black/60 mt-0.5">{result.commodity}</p>
                       </div>
                       <span
                         className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${statusColors[result.status].badge}`}
@@ -614,10 +614,10 @@ export default function App() {
                         <Lightbulb className="size-4 text-amber-700" />
                       </div>
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-black/50 mb-1">
                           Alasan Sistem
                         </p>
-                        <p className="text-sm text-foreground leading-relaxed text-justify">{result.reason}</p>
+                        <p className="text-sm text-slate-900 leading-relaxed text-justify">{result.reason}</p>
                       </div>
                     </div>
 
@@ -626,7 +626,7 @@ export default function App() {
                       <>
                         <Separator className="my-4 opacity-50" />
                         <div className="space-y-3">
-                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          <p className="text-xs font-semibold uppercase tracking-wider text-black/50">
                             Komoditas Alternatif
                           </p>
                           <div className="grid gap-3 sm:grid-cols-2">
@@ -636,7 +636,7 @@ export default function App() {
                                   <span className="font-bold text-sm text-foreground">{alt.commodity}</span>
                                   <span className={`text-xs font-extrabold ${statusColors[result.status].text}`}>{alt.certaintyFactor}%</span>
                                 </div>
-                                <p className="text-[11px] text-muted-foreground leading-relaxed text-justify">{alt.reason}</p>
+                                <p className="text-[11px] text-black/70 leading-relaxed text-justify">{alt.reason}</p>
                               </div>
                             ))}
                           </div>
