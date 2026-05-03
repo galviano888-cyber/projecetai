@@ -475,16 +475,16 @@ export default function App() {
                         value={water}
                         onChange={(e) => setWater(e.target.value as WaterAvailability)}
                         required
-                        className="w-full h-11 rounded-lg border border-input bg-transparent pl-10 pr-9 text-sm shadow-xs appearance-none transition-[color,box-shadow] outline-none focus-visible:border-agri-green focus-visible:ring-2 focus-visible:ring-agri-green/20 dark:bg-input/30"
+                        className="w-full h-11 rounded-lg border border-input bg-white text-slate-900 pl-10 pr-9 text-sm shadow-xs appearance-none transition-all outline-none focus-visible:border-agri-green focus-visible:ring-2 focus-visible:ring-agri-green/20"
                       >
-                        <option value="" disabled>
+                        <option value="" disabled className="text-slate-900 bg-white">
                           Pilih kondisi ketersediaan air...
                         </option>
-                        <option value="Sangat Cukup">80-100% (Sangat Cukup)</option>
-                        <option value="Cukup">60-80% (Cukup)</option>
-                        <option value="Sedang">40-60% (Sedang)</option>
-                        <option value="Kurang">20-40% (Kurang)</option>
-                        <option value="Sangat Kurang">0-20% (Sangat Kurang)</option>
+                        <option value="Sangat Cukup" className="text-slate-900 bg-white">80-100% (Sangat Cukup)</option>
+                        <option value="Cukup" className="text-slate-900 bg-white">60-80% (Cukup)</option>
+                        <option value="Sedang" className="text-slate-900 bg-white">40-60% (Sedang)</option>
+                        <option value="Kurang" className="text-slate-900 bg-white">20-40% (Kurang)</option>
+                        <option value="Sangat Kurang" className="text-slate-900 bg-white">0-20% (Sangat Kurang)</option>
                       </select>
                       <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                     </div>
