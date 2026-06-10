@@ -1,10 +1,14 @@
 import { useState, useEffect } from "react"
-import { CloudRain, BrainCircuit, CircleCheck as CheckCircle2, Lightbulb, Sprout, Menu, X, ChevronDown, Droplets, TrendingUp, TriangleAlert as AlertTriangle } from "lucide-react"
+import { CloudRain, BrainCircuit, CircleCheck as CheckCircle2, Lightbulb, Sprout, Menu, X, ChevronDown, Droplets, TrendingUp, TriangleAlert as AlertTriangle, BarChart2, CalendarDays } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Spinner } from "@/components/ui/spinner"
+import { ClimateCharts } from "@/components/ClimateCharts"
+import { PlantingCalendar } from "@/components/PlantingCalendar"
+import { SeasonIndicator } from "@/components/SeasonIndicator"
+import { useClimateData, useCurrentMonthClimate, useAvailableYears } from "@/hooks/useClimateData"
 
 type WaterAvailability = "Sangat Cukup" | "Cukup" | "Sedang" | "Kurang" | "Sangat Kurang" | ""
 
@@ -191,10 +195,17 @@ export default function LandingPage() {
 
   const navLinks = [
     { label: "Beranda", href: "#beranda" },
+    { label: "Dashboard", href: "#dashboard" },
     { label: "Analisis", href: "#analisis" },
     { label: "Edukasi", href: "#edukasi" },
     { label: "Profil", href: "#profil" },
   ]
+
+  // Dashboard data
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+  const { data: climateData, loading: climateLoading } = useClimateData(selectedYear)
+  const { data: currentClimate } = useCurrentMonthClimate()
+  const availableYears = useAvailableYears()
 
   const statusColors = {
     safe: {
@@ -379,6 +390,104 @@ export default function LandingPage() {
         </div>
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
           <ChevronDown className="size-6 text-white/60" />
+        </div>
+      </section>
+
+      {/* ─── Dashboard Section ─── */}
+      <section id="dashboard" className="py-16 bg-background">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          {/* Section header */}
+          <div className="text-center mb-10">
+            <Badge className="mb-3 bg-agri-green/10 text-agri-green-dark border-agri-green/20">
+              Data Real-time
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground mb-3">
+              Dashboard Iklim Demak
+            </h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              Data iklim bulanan Kabupaten Demak berdasarkan pencatatan historis BMKG.
+            </p>
+          </div>
+
+          {/* Season indicator + year selector */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+            {currentClimate ? (
+              <SeasonIndicator
+                ch_mm={currentClimate.ch_mm}
+                bulan={currentClimate.bulan}
+                tahun={currentClimate.tahun}
+              />
+            ) : (
+              <div className="h-14 w-64 rounded-2xl bg-muted animate-pulse" />
+            )}
+
+            {/* Year selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground font-medium">Tahun:</span>
+              {availableYears.length > 0 ? (
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                  className="h-9 rounded-lg border border-input bg-white px-3 text-sm font-medium outline-none focus-visible:border-agri-green focus-visible:ring-2 focus-visible:ring-agri-green/20"
+                >
+                  {availableYears.map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              ) : (
+                <span className="text-sm text-muted-foreground">{selectedYear}</span>
+              )}
+            </div>
+          </div>
+
+          {/* Stats summary cards */}
+          {currentClimate && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+              {[
+                { label: 'Curah Hujan', value: `${currentClimate.ch_mm}`, unit: 'mm', icon: CloudRain, color: 'text-agri-blue', bg: 'bg-agri-blue/10' },
+                { label: 'Suhu', value: `${currentClimate.suhu}`, unit: '°C', icon: TrendingUp, color: 'text-orange-500', bg: 'bg-orange-500/10' },
+                { label: 'Kelembaban', value: `${currentClimate.kelembaban}`, unit: '%', icon: Droplets, color: 'text-agri-green', bg: 'bg-agri-green/10' },
+                { label: 'Air Tanah', value: `${currentClimate.air_tanah}`, unit: 'mm/hr', icon: BarChart2, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+              ].map((stat) => (
+                <div key={stat.label} className="rounded-2xl border border-border bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
+                  <div className={`size-8 rounded-xl ${stat.bg} flex items-center justify-center mb-3`}>
+                    <stat.icon className={`size-4 ${stat.color}`} />
+                  </div>
+                  <p className="text-xs text-muted-foreground">{stat.label}</p>
+                  <p className="text-xl font-bold text-foreground mt-0.5">
+                    {stat.value} <span className="text-xs font-normal text-muted-foreground">{stat.unit}</span>
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Climate Charts */}
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart2 className="size-4 text-agri-green" />
+              <h3 className="text-base font-semibold text-foreground">Grafik Iklim Bulanan</h3>
+              {climateLoading && <span className="text-xs text-muted-foreground animate-pulse">Memuat data...</span>}
+            </div>
+            <ClimateCharts data={climateData} />
+          </div>
+
+          {/* Planting Calendar */}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <CalendarDays className="size-4 text-agri-green" />
+              <h3 className="text-base font-semibold text-foreground">Kalender Tanam Komoditas</h3>
+            </div>
+            <PlantingCalendar
+              currentClimate={currentClimate ? {
+                ch_mm: currentClimate.ch_mm,
+                suhu: currentClimate.suhu,
+                kelembaban: currentClimate.kelembaban,
+                air_tanah: currentClimate.air_tanah,
+                bulan: currentClimate.bulan,
+              } : null}
+            />
+          </div>
         </div>
       </section>
 
