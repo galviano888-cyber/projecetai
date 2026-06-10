@@ -59,11 +59,6 @@ export default function LandingPage() {
             <a href="#beranda" className="flex items-center gap-4 group">
               <div className="flex items-center gap-3 pr-4 border-r border-white/20">
                 <img
-                  src="https://www.bmkg.go.id/asset/img/logo/logo-bmkg.png"
-                  alt="BMKG Logo"
-                  className="h-10 w-auto object-contain"
-                />
-                <img
                   src="/logo-stmkg.png"
                   alt="STMKG Logo"
                   className="h-10 w-auto object-contain"
