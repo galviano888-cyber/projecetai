@@ -120,20 +120,34 @@ export function scoreCommodity(
   commodity: Commodity,
   climate: ClimateData
 ): RecommendationResult {
+  // Guard: pastikan data iklim valid sebelum kalkulasi
+  const safeCH = Number.isFinite(climate.ch_mm) ? climate.ch_mm : 0
+  const safeSuhu = Number.isFinite(climate.suhu) ? climate.suhu : 0
+  const safeRH = Number.isFinite(climate.kelembaban) ? climate.kelembaban : 0
+  const safeAir = Number.isFinite(climate.air_tanah) ? climate.air_tanah : 0
+
+  const safeClimate: ClimateData = {
+    ...climate,
+    ch_mm: safeCH,
+    suhu: safeSuhu,
+    kelembaban: safeRH,
+    air_tanah: safeAir,
+  }
+
   const details: ParameterDetail[] = []
 
   // ─── Curah Hujan ───
   let chScore = 0.5 // default jika tidak ada data syarat
   if (commodity.ch_min != null && commodity.ch_max != null) {
-    chScore = fuzzyScore(climate.ch_mm, commodity.ch_min, commodity.ch_max)
+    chScore = fuzzyScore(safeClimate.ch_mm, commodity.ch_min, commodity.ch_max)
     const chStatus = chScore >= 1 ? 'optimal' : chScore > 0 ? 'marjinal' : 'tidak'
     details.push({
       parameter: 'Curah Hujan',
-      nilai: climate.ch_mm,
+      nilai: safeClimate.ch_mm,
       unit: 'mm/bln',
       status: chStatus,
       keterangan: chScore === 0
-        ? climate.ch_mm < commodity.ch_min
+        ? safeClimate.ch_mm < commodity.ch_min
           ? `Terlalu kering, min ${commodity.ch_min} mm`
           : `Terlalu basah, max ${commodity.ch_max} mm`
         : `Rentang optimal ${commodity.ch_min}–${commodity.ch_max} mm`,
@@ -143,15 +157,15 @@ export function scoreCommodity(
   // ─── Suhu ───
   let suhuScore = 0.5
   if (commodity.suhu_min != null && commodity.suhu_max != null) {
-    suhuScore = fuzzyScore(climate.suhu, commodity.suhu_min, commodity.suhu_max, 0.10)
+    suhuScore = fuzzyScore(safeClimate.suhu, commodity.suhu_min, commodity.suhu_max, 0.10)
     const suhuStatus = suhuScore >= 1 ? 'optimal' : suhuScore > 0 ? 'marjinal' : 'tidak'
     details.push({
       parameter: 'Suhu',
-      nilai: climate.suhu,
+      nilai: safeClimate.suhu,
       unit: '°C',
       status: suhuStatus,
       keterangan: suhuScore === 0
-        ? climate.suhu < commodity.suhu_min
+        ? safeClimate.suhu < commodity.suhu_min
           ? `Terlalu dingin, min ${commodity.suhu_min}°C`
           : `Terlalu panas, max ${commodity.suhu_max}°C`
         : `Rentang optimal ${commodity.suhu_min}–${commodity.suhu_max}°C`,
@@ -161,15 +175,15 @@ export function scoreCommodity(
   // ─── Kelembaban ───
   let rhScore = 0.5
   if (commodity.kelembaban_min != null && commodity.kelembaban_max != null) {
-    rhScore = fuzzyScore(climate.kelembaban, commodity.kelembaban_min, commodity.kelembaban_max, 0.15)
+    rhScore = fuzzyScore(safeClimate.kelembaban, commodity.kelembaban_min, commodity.kelembaban_max, 0.15)
     const rhStatus = rhScore >= 1 ? 'optimal' : rhScore > 0 ? 'marjinal' : 'tidak'
     details.push({
       parameter: 'Kelembaban',
-      nilai: climate.kelembaban,
+      nilai: safeClimate.kelembaban,
       unit: '%',
       status: rhStatus,
       keterangan: rhScore === 0
-        ? climate.kelembaban < commodity.kelembaban_min
+        ? safeClimate.kelembaban < commodity.kelembaban_min
           ? `Terlalu kering, min ${commodity.kelembaban_min}%`
           : `Terlalu lembab, max ${commodity.kelembaban_max}%`
         : `Rentang optimal ${commodity.kelembaban_min}–${commodity.kelembaban_max}%`,
@@ -179,19 +193,18 @@ export function scoreCommodity(
   // ─── Air Tanah ───
   let airScore = 0.5
   if (commodity.air_tanah_min != null) {
-    // Air tanah: semakin besar semakin baik (hanya ada batas minimum)
-    if (climate.air_tanah >= commodity.air_tanah_min) {
+    if (safeClimate.air_tanah >= commodity.air_tanah_min) {
       airScore = 1.0
     } else {
       const toleranMin = commodity.air_tanah_min * 0.7
-      airScore = climate.air_tanah >= toleranMin
-        ? (climate.air_tanah - toleranMin) / (commodity.air_tanah_min - toleranMin)
+      airScore = safeClimate.air_tanah >= toleranMin
+        ? (safeClimate.air_tanah - toleranMin) / (commodity.air_tanah_min - toleranMin)
         : 0
     }
     const airStatus = airScore >= 1 ? 'optimal' : airScore > 0 ? 'marjinal' : 'tidak'
     details.push({
       parameter: 'Air Tanah',
-      nilai: climate.air_tanah,
+      nilai: safeClimate.air_tanah,
       unit: 'mm/hr',
       status: airStatus,
       keterangan: airScore === 0
@@ -207,7 +220,9 @@ export function scoreCommodity(
     rhScore        * BOBOT.kelembaban +
     airScore       * BOBOT.air_tanah
 
-  const skor_kecocokan = Math.round(skorRaw * 100)
+  // Guard NaN: jika kalkulasi menghasilkan NaN karena data tidak valid, fallback ke 0
+  const skorRawSafe = Number.isFinite(skorRaw) ? skorRaw : 0
+  const skor_kecocokan = Math.round(Math.min(100, Math.max(0, skorRawSafe * 100)))
   const { grade, label } = getGrade(skor_kecocokan)
 
   return {

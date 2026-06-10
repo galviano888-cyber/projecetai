@@ -1,15 +1,26 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    'VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY harus diisi di file .env.local'
+if (!supabaseUrl || supabaseUrl === 'https://YOUR_PROJECT_ID.supabase.co') {
+  console.error(
+    '[AgroDemak] VITE_SUPABASE_URL belum diisi di file .env.local. ' +
+    'Salin .env.local dan isi dengan nilai dari Supabase Dashboard > Settings > API.'
   )
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+if (!supabaseAnonKey || supabaseAnonKey === 'YOUR_ANON_KEY') {
+  console.error(
+    '[AgroDemak] VITE_SUPABASE_ANON_KEY belum diisi di file .env.local.'
+  )
+}
+
+// Fallback agar app tidak crash total saat env belum diisi (misal saat development awal)
+export const supabase = createClient(
+  supabaseUrl ?? 'https://placeholder.supabase.co',
+  supabaseAnonKey ?? 'placeholder-key'
+)
 
 // ─── Type Definitions ───────────────────────────────────────────────
 export interface ClimateData {

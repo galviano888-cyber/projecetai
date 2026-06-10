@@ -206,8 +206,8 @@ export default function LandingPage() {
 
   // Dashboard data
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
-  const { data: climateData, loading: climateLoading } = useClimateData(selectedYear)
-  const { data: currentClimate } = useCurrentMonthClimate()
+  const { data: climateData, loading: climateLoading, error: climateError } = useClimateData(selectedYear)
+  const { data: currentClimate, error: currentClimateError } = useCurrentMonthClimate()
   const availableYears = useAvailableYears()
 
   const statusColors = {
@@ -459,6 +459,22 @@ export default function LandingPage() {
                   </p>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Error state grafik iklim */}
+          {climateError && (
+            <div className="mb-4 flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              <AlertTriangle className="size-4 shrink-0" />
+              <span>Gagal memuat data iklim: {climateError}. Periksa koneksi atau konfigurasi Supabase.</span>
+            </div>
+          )}
+
+          {/* Error state iklim bulan ini */}
+          {currentClimateError && !currentClimate && (
+            <div className="mb-4 flex items-center gap-2 rounded-xl border border-amber-300 bg-agri-yellow/10 px-4 py-3 text-sm text-amber-800">
+              <AlertTriangle className="size-4 shrink-0" />
+              <span>Data iklim bulan ini tidak tersedia. Rekomendasi dan indikator musim tidak dapat ditampilkan.</span>
             </div>
           )}
 

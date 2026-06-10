@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom"
 import LandingPage from "./pages/LandingPage"
 import LibraryPage from "./pages/LibraryPage"
 import LibraryDetailPage from "./pages/LibraryDetailPage"
+import NotFoundPage from "./pages/NotFoundPage"
 import AdminLogin from "./pages/admin/AdminLogin"
 import AdminLayout from "./pages/admin/AdminLayout"
 import AdminDashboard from "./pages/admin/AdminDashboard"
@@ -35,6 +36,9 @@ export default function App() {
         <Route path="komoditas" element={<AdminKomoditas />} />
         <Route path="library" element={<AdminLibrary />} />
       </Route>
+
+      {/* 404 - fallback untuk semua route yang tidak cocok */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }
