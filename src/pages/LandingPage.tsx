@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Link } from "react-router-dom"
 import { CloudRain, BrainCircuit, CircleCheck as CheckCircle2, Lightbulb, Sprout, Menu, X, ChevronDown, Droplets, TrendingUp, TriangleAlert as AlertTriangle, BarChart2, CalendarDays } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -209,6 +209,17 @@ export default function LandingPage() {
   const { data: climateData, loading: climateLoading, error: climateError } = useClimateData(selectedYear)
   const { data: currentClimate, error: currentClimateError } = useCurrentMonthClimate()
   const availableYears = useAvailableYears()
+
+  // Memoize stat cards agar tidak dihitung ulang setiap render
+  const currentClimateStats = useMemo(() => {
+    if (!currentClimate) return []
+    return [
+      { label: 'Curah Hujan', value: `${currentClimate.ch_mm}`, unit: 'mm', icon: CloudRain, color: 'text-agri-blue', bg: 'bg-agri-blue/10' },
+      { label: 'Suhu', value: `${currentClimate.suhu}`, unit: '\u00b0C', icon: TrendingUp, color: 'text-orange-500', bg: 'bg-orange-500/10' },
+      { label: 'Kelembaban', value: `${currentClimate.kelembaban}`, unit: '%', icon: Droplets, color: 'text-agri-green', bg: 'bg-agri-green/10' },
+      { label: 'Air Tanah', value: `${currentClimate.air_tanah}`, unit: 'mm/hr', icon: BarChart2, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+    ]
+  }, [currentClimate])
 
   const statusColors = {
     safe: {
@@ -443,12 +454,7 @@ export default function LandingPage() {
           {/* Stats summary cards */}
           {currentClimate && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-              {[
-                { label: 'Curah Hujan', value: `${currentClimate.ch_mm}`, unit: 'mm', icon: CloudRain, color: 'text-agri-blue', bg: 'bg-agri-blue/10' },
-                { label: 'Suhu', value: `${currentClimate.suhu}`, unit: '°C', icon: TrendingUp, color: 'text-orange-500', bg: 'bg-orange-500/10' },
-                { label: 'Kelembaban', value: `${currentClimate.kelembaban}`, unit: '%', icon: Droplets, color: 'text-agri-green', bg: 'bg-agri-green/10' },
-                { label: 'Air Tanah', value: `${currentClimate.air_tanah}`, unit: 'mm/hr', icon: BarChart2, color: 'text-purple-500', bg: 'bg-purple-500/10' },
-              ].map((stat) => (
+              {currentClimateStats.map((stat) => (
                 <div key={stat.label} className="rounded-2xl border border-border bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
                   <div className={`size-8 rounded-xl ${stat.bg} flex items-center justify-center mb-3`}>
                     <stat.icon className={`size-4 ${stat.color}`} />

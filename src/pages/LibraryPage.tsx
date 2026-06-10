@@ -1,14 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import type { Commodity, Library } from '@/lib/supabase'
 import { useCurrentMonthClimate } from '@/hooks/useClimateData'
 import { scoreCommodity } from '@/lib/expertSystem'
 import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import {
   Sprout, Search, Leaf, CloudRain, Sun, Wind,
-  ChevronRight, BookOpen
+  ChevronRight, BookOpen, ChevronLeft
 } from 'lucide-react'
+
+const PAGE_SIZE = 6
 
 const MUSIM_CONFIG: Record<string, { label: string; icon: typeof CloudRain; color: string }> = {
   hujan:           { label: 'Musim Hujan',     icon: CloudRain, color: 'bg-agri-blue/10 text-agri-blue border-agri-blue/20' },
@@ -38,14 +41,17 @@ export default function LibraryPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterMusim>('semua')
+  const [page, setPage] = useState(1)
   const { data: currentClimate } = useCurrentMonthClimate()
 
   useEffect(() => {
+    let cancelled = false
     async function fetchData() {
       const [{ data: comms }, { data: libs }] = await Promise.all([
         supabase.from('commodities').select('*').order('nama'),
-        supabase.from('library').select('*'),
+        supabase.from('library').select('commodity_id'),
       ])
+      if (cancelled) return
       setCommodities((comms as Commodity[]) ?? [])
       const libMap: Record<string, Library> = {}
       ;((libs as Library[]) ?? []).forEach(l => { if (l.commodity_id) libMap[l.commodity_id] = l })
@@ -53,21 +59,37 @@ export default function LibraryPage() {
       setLoading(false)
     }
     fetchData()
+    return () => { cancelled = true }
   }, [])
 
-  const filtered = commodities.filter(c => {
+  // Memoize filtered list - hanya hitung ulang saat search/filter/data berubah
+  const filtered = useMemo(() => commodities.filter(c => {
     const matchSearch = c.nama.toLowerCase().includes(search.toLowerCase()) ||
       (c.nama_ilmiah ?? '').toLowerCase().includes(search.toLowerCase())
     const matchFilter = filter === 'semua' || c.musim === filter
     return matchSearch && matchFilter
-  })
+  }), [commodities, search, filter])
 
-  // Hitung skor kecocokan bulan ini
-  function getGrade(c: Commodity): { grade: string; label: string; skor: number } {
-    if (!currentClimate) return { grade: '', label: '', skor: 0 }
-    const result = scoreCommodity(c, currentClimate)
-    return { grade: result.grade, label: result.grade_label, skor: result.skor_kecocokan }
-  }
+  // Reset ke halaman 1 saat filter/search berubah
+  useEffect(() => { setPage(1) }, [search, filter])
+
+  // Pagination
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const paginated = useMemo(
+    () => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filtered, page]
+  )
+
+  // Memoize skor kecocokan untuk semua komoditas di halaman ini
+  const gradeMap = useMemo(() => {
+    if (!currentClimate) return {} as Record<string, { grade: string; skor: number }>
+    const map: Record<string, { grade: string; skor: number }> = {}
+    filtered.forEach(c => {
+      const result = scoreCommodity(c, currentClimate)
+      map[c.id!] = { grade: result.grade, skor: result.skor_kecocokan }
+    })
+    return map
+  }, [filtered, currentClimate])
 
   const bulanIni = currentClimate
     ? new Date(0, currentClimate.bulan - 1).toLocaleString('id-ID', { month: 'long' })
@@ -156,104 +178,136 @@ export default function LibraryPage() {
             <p className="text-xs text-muted-foreground mt-1">Coba kata kunci lain atau ubah filter.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map(c => {
-              const { grade, skor } = getGrade(c)
-              const musimCfg = MUSIM_CONFIG[c.musim ?? 'sepanjang_tahun']
-              const MIcon = musimCfg?.icon ?? Leaf
-              const hasLibrary = !!libraries[c.id!]
+          <>
+            {/* Info jumlah hasil */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-xs text-muted-foreground">
+                Menampilkan {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} dari {filtered.length} komoditas
+              </p>
+            </div>
 
-              return (
-                <Link
-                  key={c.id}
-                  to={`/library/${c.id}`}
-                  className="group block"
-                >
-                  <Card className="h-full shadow-sm hover:shadow-lg transition-all hover:-translate-y-1 border-border group-hover:border-agri-green/30 overflow-hidden">
-                    {/* Top accent */}
-                    <div className="h-1 bg-gradient-to-r from-agri-green to-agri-blue" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {paginated.map(c => {
+                const gradeInfo = gradeMap[c.id!] ?? { grade: '', skor: 0 }
+                const { grade, skor } = gradeInfo
+                const musimCfg = MUSIM_CONFIG[c.musim ?? 'sepanjang_tahun']
+                const MIcon = musimCfg?.icon ?? Leaf
+                const hasLibrary = !!libraries[c.id!]
 
-                    <CardContent className="p-5">
-                      {/* Badges row */}
-                      <div className="flex items-center gap-2 flex-wrap mb-4">
-                        {/* Cocok bulan ini badge */}
-                        {grade && grade !== '' && (
-                          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-                            GRADE_BADGE[grade]
-                          }`}>
-                            {grade === 'S1' && <Sprout className="size-2.5" />}
-                            {GRADE_LABEL[grade]}
-                          </span>
-                        )}
-                        {/* Musim badge */}
-                        {musimCfg && (
-                          <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${
-                            musimCfg.color
-                          }`}>
-                            <MIcon className="size-2.5" />
-                            {musimCfg.label}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Icon + Name */}
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="size-12 rounded-2xl bg-agri-green/10 flex items-center justify-center shrink-0 group-hover:bg-agri-green/20 transition-colors">
-                          <Leaf className="size-6 text-agri-green" />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-foreground">{c.nama}</h3>
-                          {c.nama_ilmiah && (
-                            <p className="text-xs text-muted-foreground italic">{c.nama_ilmiah}</p>
+                return (
+                  <Link key={c.id} to={`/library/${c.id}`} className="group block">
+                    <Card className="h-full shadow-sm hover:shadow-lg transition-all hover:-translate-y-1 border-border group-hover:border-agri-green/30 overflow-hidden">
+                      <div className="h-1 bg-gradient-to-r from-agri-green to-agri-blue" />
+                      <CardContent className="p-5">
+                        <div className="flex items-center gap-2 flex-wrap mb-4">
+                          {grade && grade !== '' && (
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${GRADE_BADGE[grade]}`}>
+                              {grade === 'S1' && <Sprout className="size-2.5" />}
+                              {GRADE_LABEL[grade]}
+                            </span>
+                          )}
+                          {musimCfg && (
+                            <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${musimCfg.color}`}>
+                              <MIcon className="size-2.5" />
+                              {musimCfg.label}
+                            </span>
                           )}
                         </div>
-                      </div>
 
-                      {/* Skor bar */}
-                      {currentClimate && skor > 0 && (
-                        <div className="mb-3">
-                          <div className="flex justify-between text-xs mb-1">
-                            <span className="text-muted-foreground">Kecocokan bulan ini</span>
-                            <span className="font-semibold text-foreground">{skor}%</span>
-                          </div>
-                          <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                            <div
-                              className={`h-full rounded-full ${
-                                skor >= 75 ? 'bg-agri-green' :
-                                skor >= 50 ? 'bg-agri-yellow' :
-                                skor >= 25 ? 'bg-orange-400' : 'bg-red-400'
-                              }`}
-                              style={{ width: `${skor}%` }}
+                        {/* foto atau icon */}
+                        <div className="flex items-center gap-3 mb-3">
+                          {c.foto_url ? (
+                            <img
+                              src={c.foto_url}
+                              alt={c.nama}
+                              loading="lazy"
+                              className="size-12 rounded-2xl object-cover shrink-0"
                             />
+                          ) : (
+                            <div className="size-12 rounded-2xl bg-agri-green/10 flex items-center justify-center shrink-0 group-hover:bg-agri-green/20 transition-colors">
+                              <Leaf className="size-6 text-agri-green" />
+                            </div>
+                          )}
+                          <div>
+                            <h3 className="font-bold text-foreground">{c.nama}</h3>
+                            {c.nama_ilmiah && <p className="text-xs text-muted-foreground italic">{c.nama_ilmiah}</p>}
                           </div>
                         </div>
-                      )}
 
-                      {/* Deskripsi singkat */}
-                      {c.deskripsi && (
-                        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 mb-3">
-                          {c.deskripsi.split('.')[0]}.
-                        </p>
-                      )}
+                        {currentClimate && skor > 0 && (
+                          <div className="mb-3">
+                            <div className="flex justify-between text-xs mb-1">
+                              <span className="text-muted-foreground">Kecocokan bulan ini</span>
+                              <span className="font-semibold text-foreground">{skor}%</span>
+                            </div>
+                            <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                              <div
+                                className={`h-full rounded-full ${
+                                  skor >= 75 ? 'bg-agri-green' :
+                                  skor >= 50 ? 'bg-agri-yellow' :
+                                  skor >= 25 ? 'bg-orange-400' : 'bg-red-400'
+                                }`}
+                                style={{ width: `${skor}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
 
-                      {/* Info row */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex gap-3 text-xs text-muted-foreground">
-                          {c.durasi_panen && <span>{c.durasi_panen}</span>}
+                        {c.deskripsi && (
+                          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 mb-3">
+                            {c.deskripsi.split('.')[0]}.
+                          </p>
+                        )}
+
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">{c.durasi_panen ?? ''}</span>
+                          <span className={`flex items-center gap-1 text-xs font-medium ${
+                            hasLibrary ? 'text-agri-green group-hover:text-agri-green-dark' : 'text-muted-foreground'
+                          }`}>
+                            {hasLibrary ? 'Lihat detail' : 'Belum ada konten'}
+                            <ChevronRight className="size-3" />
+                          </span>
                         </div>
-                        <div className={`flex items-center gap-1 text-xs font-medium transition-colors ${
-                          hasLibrary ? 'text-agri-green group-hover:text-agri-green-dark' : 'text-muted-foreground'
-                        }`}>
-                          {hasLibrary ? 'Lihat detail' : 'Belum ada konten'}
-                          <ChevronRight className="size-3" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              )
-            })}
-          </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                )
+              })}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  <ChevronLeft className="size-4" />
+                </Button>
+                {[...Array(totalPages)].map((_, i) => (
+                  <Button
+                    key={i}
+                    variant={page === i + 1 ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPage(i + 1)}
+                    className={page === i + 1 ? 'bg-agri-green hover:bg-agri-green-dark text-white' : ''}
+                  >
+                    {i + 1}
+                  </Button>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                >
+                  <ChevronRight className="size-4" />
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

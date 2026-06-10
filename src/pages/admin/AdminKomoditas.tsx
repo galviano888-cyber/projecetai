@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Commodity } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -6,8 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge'
 import {
   Leaf, Plus, Pencil, Trash2, Loader2, X,
-  CheckCircle2, AlertCircle, ChevronDown, ChevronUp
+  CheckCircle2, AlertCircle, ChevronDown, ChevronUp,
+  Upload, ImageIcon, ChevronLeft, ChevronRight
 } from 'lucide-react'
+
+const PAGE_SIZE = 10
 
 const MUSIM_LABELS: Record<string, string> = {
   hujan: 'Musim Hujan',
@@ -37,26 +40,80 @@ type ToastType = { type: 'success' | 'error'; message: string } | null
 export default function AdminKomoditas() {
   const [commodities, setCommodities] = useState<Commodity[]>([])
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Commodity | null>(null)
   const [form, setForm] = useState({ ...emptyForm })
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [toast, setToast] = useState<ToastType>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<string | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   function showToast(type: 'success' | 'error', message: string) {
     setToast({ type, message })
     setTimeout(() => setToast(null), 4000)
   }
 
-  async function fetchCommodities() {
-    const { data } = await supabase.from('commodities').select('*').order('nama')
-    setCommodities((data as Commodity[]) ?? [])
+  async function fetchCommodities(p = page) {
+    setLoading(true)
+    const from = (p - 1) * PAGE_SIZE
+    const to = from + PAGE_SIZE - 1
+
+    const [{ data, error }, { count }] = await Promise.all([
+      supabase.from('commodities').select('*').order('nama').range(from, to),
+      supabase.from('commodities').select('*', { count: 'exact', head: true }),
+    ])
+
+    if (!error) {
+      setCommodities((data as Commodity[]) ?? [])
+      setTotal(count ?? 0)
+    }
     setLoading(false)
   }
 
-  useEffect(() => { fetchCommodities() }, [])
+  useEffect(() => { fetchCommodities(page) }, [page])
+
+  const totalPages = Math.ceil(total / PAGE_SIZE)
+
+  async function handleUploadImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validasi tipe dan ukuran
+    if (!file.type.startsWith('image/')) {
+      showToast('error', 'File harus berupa gambar (jpg, png, webp).')
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      showToast('error', 'Ukuran gambar maksimal 2MB.')
+      return
+    }
+
+    setUploading(true)
+    const ext = file.name.split('.').pop()
+    const fileName = `komoditas/${Date.now()}.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('agrodemak-images')
+      .upload(fileName, file, { upsert: true })
+
+    if (uploadError) {
+      showToast('error', `Gagal upload: ${uploadError.message}`)
+      setUploading(false)
+      return
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('agrodemak-images')
+      .getPublicUrl(fileName)
+
+    setForm(prev => ({ ...prev, foto_url: urlData.publicUrl }))
+    showToast('success', 'Gambar berhasil diupload.')
+    setUploading(false)
+  }
 
   function openCreate() {
     setEditing(null)
@@ -126,7 +183,7 @@ export default function AdminKomoditas() {
             <Leaf className="size-5 text-agri-green" /> Kelola Komoditas
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {commodities.length} komoditas terdaftar
+            {total} komoditas terdaftar
           </p>
         </div>
         {!showForm && (
@@ -193,6 +250,51 @@ export default function AdminKomoditas() {
                     placeholder="Deskripsi singkat tanaman..."
                   />
                 </div>
+
+                {/* Upload foto */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Foto Komoditas</label>
+                  <div className="flex items-start gap-3">
+                    {form.foto_url ? (
+                      <img src={form.foto_url} alt="Preview" className="size-16 rounded-xl object-cover border border-border shrink-0" />
+                    ) : (
+                      <div className="size-16 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                        <ImageIcon className="size-6 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex-1 space-y-2">
+                      <label
+                        htmlFor="foto-upload"
+                        className={`flex items-center gap-2 h-9 px-3 rounded-lg border border-input text-sm cursor-pointer hover:bg-muted transition-colors ${
+                          uploading ? 'opacity-50 pointer-events-none' : ''
+                        }`}
+                      >
+                        {uploading
+                          ? <><Loader2 className="size-3.5 animate-spin" /> Mengupload...</>
+                          : <><Upload className="size-3.5" /> Pilih Gambar</>}
+                        <input
+                          id="foto-upload"
+                          type="file"
+                          accept="image/*"
+                          ref={fileRef}
+                          onChange={handleUploadImage}
+                          className="sr-only"
+                        />
+                      </label>
+                      <p className="text-xs text-muted-foreground">JPG, PNG, WebP. Maks 2MB.</p>
+                      {form.foto_url && (
+                        <button
+                          type="button"
+                          onClick={() => setForm(p => ({ ...p, foto_url: '' }))}
+                          className="text-xs text-destructive hover:underline"
+                        >
+                          Hapus foto
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium">Musim Tanam</label>
                   <select
@@ -268,13 +370,19 @@ export default function AdminKomoditas() {
           </CardContent>
         </Card>
       ) : (
+        <>
         <div className="space-y-2">
           {commodities.map((c) => (
             <div key={c.id} className="rounded-xl border border-border bg-white overflow-hidden">
               <div className="flex items-center gap-3 px-4 py-3">
-                <div className="size-8 rounded-lg bg-agri-green/10 flex items-center justify-center shrink-0">
-                  <Leaf className="size-4 text-agri-green" />
-                </div>
+                {/* Foto atau icon */}
+                {c.foto_url ? (
+                  <img src={c.foto_url} alt={c.nama} loading="lazy" className="size-8 rounded-lg object-cover shrink-0" />
+                ) : (
+                  <div className="size-8 rounded-lg bg-agri-green/10 flex items-center justify-center shrink-0">
+                    <Leaf className="size-4 text-agri-green" />
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-foreground truncate">{c.nama}</p>
                   {c.nama_ilmiah && <p className="text-xs text-muted-foreground italic truncate">{c.nama_ilmiah}</p>}
@@ -324,6 +432,22 @@ export default function AdminKomoditas() {
             </div>
           ))}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-4">
+            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+              <ChevronLeft className="size-4" />
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Halaman {page} dari {totalPages}
+            </span>
+            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        )}
+        </>
       )}
 
       {/* Delete confirm dialog */}

@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import type { Commodity, Library } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { RichTextEditor, RichContent } from '@/components/RichTextEditor'
 import {
   BookOpen, Pencil, Loader2, X,
   CheckCircle2, AlertCircle, Leaf, Eye
@@ -58,9 +59,6 @@ export default function AdminLibrary() {
     } : { ...emptyForm })
   }
 
-  function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
-  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -178,37 +176,31 @@ export default function AdminLibrary() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSave} className="space-y-4">
-                  <TextareaField
-                    name="konten_detail"
+                  <RichEditorField
                     label="Deskripsi Detail"
                     value={form.konten_detail}
-                    onChange={handleChange}
-                    rows={4}
+                    onChange={v => setForm(p => ({ ...p, konten_detail: v }))}
                     placeholder="Deskripsi lengkap tentang tanaman, manfaat, dan karakteristiknya..."
                   />
-                  <TextareaField
-                    name="tips_budidaya"
+                  <RichEditorField
                     label="Tips Budidaya"
                     value={form.tips_budidaya}
-                    onChange={handleChange}
-                    rows={4}
+                    onChange={v => setForm(p => ({ ...p, tips_budidaya: v }))}
                     placeholder="Tips dan panduan praktis untuk petani..."
                   />
-                  <TextareaField
-                    name="hama_umum"
+                  <RichEditorField
                     label="Hama & Penyakit Umum"
                     value={form.hama_umum}
-                    onChange={handleChange}
-                    rows={3}
+                    onChange={v => setForm(p => ({ ...p, hama_umum: v }))}
                     placeholder="Daftar hama dan penyakit yang sering menyerang..."
+                    minHeight="100px"
                   />
-                  <TextareaField
-                    name="cara_pencegahan"
+                  <RichEditorField
                     label="Cara Pencegahan & Pengendalian"
                     value={form.cara_pencegahan}
-                    onChange={handleChange}
-                    rows={3}
+                    onChange={v => setForm(p => ({ ...p, cara_pencegahan: v }))}
                     placeholder="Langkah-langkah pencegahan dan pengendalian OPT..."
+                    minHeight="100px"
                   />
                   <div className="flex gap-3 pt-2">
                     <Button
@@ -250,20 +242,21 @@ export default function AdminLibrary() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {lib.konten_detail && (
-                    <PreviewSection title="Deskripsi Detail" content={lib.konten_detail} />
-                  )}
-                  {lib.tips_budidaya && (
-                    <PreviewSection title="Tips Budidaya" content={lib.tips_budidaya} />
-                  )}
-                  {lib.hama_umum && (
-                    <PreviewSection title="Hama & Penyakit" content={lib.hama_umum} />
-                  )}
-                  {lib.cara_pencegahan && (
-                    <PreviewSection title="Cara Pencegahan" content={lib.cara_pencegahan} />
-                  )}
-                </CardContent>
+                 <CardContent className="space-y-4">
+                   {lib.konten_detail && (
+                     <PreviewSection title="Deskripsi Detail" content={lib.konten_detail} />
+                   )}
+                   {lib.tips_budidaya && (
+                     <PreviewSection title="Tips Budidaya" content={lib.tips_budidaya} />
+                   )}
+                   {lib.hama_umum && (
+                     <PreviewSection title="Hama & Penyakit" content={lib.hama_umum} />
+                   )}
+                   {lib.cara_pencegahan && (
+                     <PreviewSection title="Cara Pencegahan" content={lib.cara_pencegahan} />
+                   )}
+                 </CardContent>
+               
               </Card>
             )
           })()}
@@ -286,28 +279,34 @@ export default function AdminLibrary() {
   )
 }
 
-function TextareaField({ name, label, value, onChange, rows, placeholder }: {
-  name: string; label: string; value: string
-  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void
-  rows?: number; placeholder?: string
+function RichEditorField({ label, value, onChange, placeholder, minHeight }: {
+  label: string; value: string
+  onChange: (v: string) => void
+  placeholder?: string; minHeight?: string
 }) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={name} className="text-sm font-medium">{label}</label>
-      <textarea
-        id={name} name={name} value={value} onChange={onChange}
-        rows={rows ?? 3} placeholder={placeholder}
-        className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-agri-green focus-visible:ring-2 focus-visible:ring-agri-green/20 resize-y placeholder:text-muted-foreground"
+      <label className="text-sm font-medium">{label}</label>
+      <RichTextEditor
+        content={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        minHeight={minHeight}
       />
     </div>
   )
 }
 
 function PreviewSection({ title, content }: { title: string; content: string }) {
+  // Deteksi apakah konten adalah HTML atau plain text
+  const isHtml = content.trim().startsWith('<')
   return (
     <div>
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">{title}</p>
-      <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{content}</p>
+      {isHtml
+        ? <RichContent html={content} />
+        : <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{content}</p>
+      }
     </div>
   )
 }

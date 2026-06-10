@@ -5,6 +5,7 @@ import type { Commodity, Library } from '@/lib/supabase'
 import { useCurrentMonthClimate } from '@/hooks/useClimateData'
 import { scoreCommodity } from '@/lib/expertSystem'
 import { Card, CardContent } from '@/components/ui/card'
+import { RichContent } from '@/components/RichTextEditor'
 import {
   ArrowLeft, Leaf, CloudRain, Thermometer, Droplets,
   Layers, Clock, Ruler, Sprout, AlertTriangle,
@@ -365,6 +366,7 @@ function LibSection({
   icon: React.ComponentType<{ className?: string }>
   iconColor: string; title: string; content: string
 }) {
+  const isHtml = content.trim().startsWith('<')
   return (
     <Card className="shadow-sm">
       <CardContent className="pt-5 pb-5">
@@ -372,7 +374,10 @@ function LibSection({
           <Icon className={`size-4 ${iconColor}`} />
           {title}
         </h2>
-        <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{content}</p>
+        {isHtml
+          ? <RichContent html={content} />
+          : <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{content}</p>
+        }
       </CardContent>
     </Card>
   )
