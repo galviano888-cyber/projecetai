@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
-import type { Commodity } from '@/lib/supabase'
+import type { Commodity, ClimateData } from '@/lib/supabase'
+import { scoreCommodity } from '@/lib/expertSystem'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Calendar, Info } from 'lucide-react'
+import { Calendar, Info, AlertTriangle } from 'lucide-react'
 
 const BULAN_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des']
+const BULAN_FULL = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
 
 // Mapping waktu_tanam ke array bulan aktif
-// Format: "Nov-Feb" atau "Apr-Jul, Nov-Feb"
 function parsePlantingMonths(waktuTanam: string): number[] {
   if (!waktuTanam || waktuTanam.toLowerCase().includes('sepanjang')) {
     return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
@@ -16,7 +17,6 @@ function parsePlantingMonths(waktuTanam: string): number[] {
   const BULAN_MAP: Record<string, number> = {
     jan: 1, feb: 2, mar: 3, apr: 4, mei: 5, jun: 6,
     jul: 7, agt: 8, sep: 9, okt: 10, nov: 11, des: 12,
-    // English fallback
     may: 5, aug: 8, oct: 10, dec: 12,
   }
 
@@ -32,7 +32,6 @@ function parsePlantingMonths(waktuTanam: string): number[] {
         if (start <= end) {
           for (let m = start; m <= end; m++) result.add(m)
         } else {
-          // Wrap around year (e.g. Nov-Feb)
           for (let m = start; m <= 12; m++) result.add(m)
           for (let m = 1; m <= end; m++) result.add(m)
         }
@@ -46,50 +45,14 @@ function parsePlantingMonths(waktuTanam: string): number[] {
   return Array.from(result).sort((a, b) => a - b)
 }
 
-// Skor kecocokan berdasarkan parameter iklim bulan berjalan vs syarat komoditas
-function scoreCommodity(
-  c: Commodity,
-  ch_mm: number,
-  suhu: number,
-  kelembaban: number,
-  air_tanah: number
-): number {
-  let score = 0
-  let checks = 0
-
-  if (c.ch_min != null && c.ch_max != null) {
-    checks++
-    if (ch_mm >= c.ch_min && ch_mm <= c.ch_max) score += 25
-    else if (ch_mm >= c.ch_min * 0.8 && ch_mm <= c.ch_max * 1.2) score += 12
-  }
-  if (c.suhu_min != null && c.suhu_max != null) {
-    checks++
-    if (suhu >= c.suhu_min && suhu <= c.suhu_max) score += 25
-    else if (suhu >= c.suhu_min - 2 && suhu <= c.suhu_max + 2) score += 12
-  }
-  if (c.kelembaban_min != null && c.kelembaban_max != null) {
-    checks++
-    if (kelembaban >= c.kelembaban_min && kelembaban <= c.kelembaban_max) score += 25
-    else if (kelembaban >= c.kelembaban_min * 0.9 && kelembaban <= c.kelembaban_max * 1.1) score += 12
-  }
-  if (c.air_tanah_min != null) {
-    checks++
-    if (air_tanah >= c.air_tanah_min) score += 25
-    else if (air_tanah >= c.air_tanah_min * 0.7) score += 12
-  }
-
-  return checks > 0 ? Math.round((score / (checks * 25)) * 100) : 50
-}
-
 function getCellStatus(
   bulan: number,
   plantingMonths: number[],
   score: number
 ): 'cocok' | 'cukup' | 'tidak' | 'off' {
-  const isPlantingMonth = plantingMonths.includes(bulan)
-  if (!isPlantingMonth) return 'off'
-  if (score >= 70) return 'cocok'
-  if (score >= 40) return 'cukup'
+  if (!plantingMonths.includes(bulan)) return 'off'
+  if (score >= 75) return 'cocok'
+  if (score >= 50) return 'cukup'
   return 'tidak'
 }
 
@@ -114,26 +77,79 @@ interface PlantingCalendarProps {
     kelembaban: number
     air_tanah: number
     bulan: number
+    tahun?: number
   } | null
+  // Data iklim historis per bulan (dari useClimateData)
+  allClimateData?: ClimateData[]
 }
 
-export function PlantingCalendar({ currentClimate }: PlantingCalendarProps) {
+export function PlantingCalendar({ currentClimate, allClimateData = [] }: PlantingCalendarProps) {
   const [commodities, setCommodities] = useState<Commodity[]>([])
   const [loading, setLoading] = useState(true)
   const [tooltip, setTooltip] = useState<string | null>(null)
 
   useEffect(() => {
+    let cancelled = false
     supabase
       .from('commodities')
       .select('*')
       .order('nama')
       .then(({ data }) => {
-        setCommodities((data as Commodity[]) ?? [])
-        setLoading(false)
+        if (!cancelled) {
+          setCommodities((data as Commodity[]) ?? [])
+          setLoading(false)
+        }
       })
+    return () => { cancelled = true }
   }, [])
 
   const currentBulan = currentClimate?.bulan ?? new Date().getMonth() + 1
+  const currentTahun = currentClimate?.tahun
+
+  // Buat map bulan -> data iklim dari data historis
+  // Prioritas: data tahun yang sama dengan currentClimate, fallback rata-rata semua tahun
+  const climateByMonth = useMemo((): Record<number, ClimateData> => {
+    const map: Record<number, ClimateData> = {}
+
+    if (allClimateData.length === 0) return map
+
+    // Kelompokkan per bulan
+    const byMonth: Record<number, ClimateData[]> = {}
+    for (const d of allClimateData) {
+      if (!byMonth[d.bulan]) byMonth[d.bulan] = []
+      byMonth[d.bulan].push(d)
+    }
+
+    for (let bulan = 1; bulan <= 12; bulan++) {
+      const entries = byMonth[bulan]
+      if (!entries || entries.length === 0) continue
+
+      // Coba ambil data tahun yang sama dulu
+      const sameYear = currentTahun
+        ? entries.find(e => e.tahun === currentTahun)
+        : null
+
+      if (sameYear) {
+        map[bulan] = sameYear
+        continue
+      }
+
+      // Fallback: rata-rata semua tahun untuk bulan ini
+      const avg: ClimateData = {
+        ...entries[0],
+        bulan,
+        ch_mm:      Math.round((entries.reduce((s, e) => s + e.ch_mm, 0) / entries.length) * 10) / 10,
+        suhu:       Math.round((entries.reduce((s, e) => s + e.suhu, 0) / entries.length) * 10) / 10,
+        kelembaban: Math.round((entries.reduce((s, e) => s + e.kelembaban, 0) / entries.length) * 10) / 10,
+        air_tanah:  Math.round((entries.reduce((s, e) => s + e.air_tanah, 0) / entries.length) * 10) / 10,
+      }
+      map[bulan] = avg
+    }
+
+    return map
+  }, [allClimateData, currentTahun])
+
+  const hasHistoricalData = Object.keys(climateByMonth).length > 0
 
   if (loading) {
     return (
@@ -171,7 +187,11 @@ export function PlantingCalendar({ currentClimate }: PlantingCalendarProps) {
             </div>
             <div>
               <CardTitle className="text-sm font-semibold">Kalender Tanam</CardTitle>
-              <p className="text-xs text-muted-foreground">Jadwal tanam komoditas per bulan</p>
+              <p className="text-xs text-muted-foreground">
+                {hasHistoricalData
+                  ? 'Warna berdasarkan data iklim historis per bulan'
+                  : 'Jadwal tanam komoditas per bulan'}
+              </p>
             </div>
           </div>
           {/* Legend */}
@@ -190,6 +210,17 @@ export function PlantingCalendar({ currentClimate }: PlantingCalendarProps) {
           </div>
         </div>
       </CardHeader>
+
+      {/* Peringatan jika tidak ada data historis */}
+      {!hasHistoricalData && currentClimate && (
+        <div className="mx-5 mb-3 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <AlertTriangle className="size-3.5 shrink-0" />
+          <span>
+            Data iklim historis tidak tersedia. Semua kolom menggunakan data
+            <strong> {BULAN_FULL[currentBulan - 1]}</strong> sebagai referensi.
+          </span>
+        </div>
+      )}
 
       <CardContent className="px-0 pb-0 overflow-x-auto">
         <table className="w-full min-w-[640px]">
@@ -216,9 +247,6 @@ export function PlantingCalendar({ currentClimate }: PlantingCalendarProps) {
           <tbody>
             {commodities.map((c, rowIdx) => {
               const plantingMonths = parsePlantingMonths(c.waktu_tanam ?? '')
-              const score = currentClimate
-                ? scoreCommodity(c, currentClimate.ch_mm, currentClimate.suhu, currentClimate.kelembaban, currentClimate.air_tanah)
-                : 50
 
               return (
                 <tr
@@ -237,26 +265,46 @@ export function PlantingCalendar({ currentClimate }: PlantingCalendarProps) {
                   </td>
                   {BULAN_SHORT.map((_, i) => {
                     const bulan = i + 1
-                    const cellScore = getCellStatus(bulan, plantingMonths, score)
                     const isCurrentMonth = bulan === currentBulan
+
+                    // Gunakan data iklim historis bulan tsb, fallback ke currentClimate
+                    const climateForMonth = climateByMonth[bulan] ?? (
+                      currentClimate ? {
+                        ...currentClimate,
+                        id: '',
+                        tahun: currentClimate.tahun ?? new Date().getFullYear(),
+                        created_at: '',
+                      } as ClimateData : null
+                    )
+
+                    let score = 50
+                    if (climateForMonth) {
+                      const result = scoreCommodity(c, climateForMonth)
+                      score = result.skor_kecocokan
+                    }
+
+                    const cellStatus = getCellStatus(bulan, plantingMonths, score)
+                    const tooltipText = climateByMonth[bulan]
+                      ? `${c.nama} – ${BULAN_SHORT[i]}: ${STATUS_LABELS[cellStatus]} (CH: ${climateByMonth[bulan].ch_mm}mm, ${score}%)`
+                      : `${c.nama} – ${BULAN_SHORT[i]}: ${STATUS_LABELS[cellStatus]}`
 
                     return (
                       <td key={i} className="px-0.5 py-1.5 text-center">
                         <div
                           className={`relative mx-auto size-8 rounded-lg flex items-center justify-center cursor-pointer transition-all hover:scale-110 hover:shadow-sm ${
-                            CELL_STYLES[cellScore]
+                            CELL_STYLES[cellStatus]
                           } ${
                             isCurrentMonth ? 'ring-2 ring-agri-green ring-offset-1' : ''
                           }`}
-                          title={`${c.nama} - ${BULAN_SHORT[i]}: ${STATUS_LABELS[cellScore]}`}
-                          onMouseEnter={() => setTooltip(`${c.nama} – ${BULAN_SHORT[i]}: ${STATUS_LABELS[cellScore]}`)}
+                          title={tooltipText}
+                          onMouseEnter={() => setTooltip(tooltipText)}
                           onMouseLeave={() => setTooltip(null)}
                           role="cell"
-                          aria-label={`${c.nama} bulan ${BULAN_SHORT[i]}: ${STATUS_LABELS[cellScore]}`}
+                          aria-label={`${c.nama} bulan ${BULAN_SHORT[i]}: ${STATUS_LABELS[cellStatus]}`}
                         >
-                          {cellScore !== 'off' && (
+                          {cellStatus !== 'off' && (
                             <span className="text-[10px] font-bold">
-                              {cellScore === 'cocok' ? '✓' : cellScore === 'cukup' ? '~' : '×'}
+                              {cellStatus === 'cocok' ? '✓' : cellStatus === 'cukup' ? '~' : '×'}
                             </span>
                           )}
                         </div>

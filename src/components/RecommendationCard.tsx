@@ -90,7 +90,8 @@ export function RecommendationCard({ climate, topN = 3 }: RecommendationCardProp
 
   useEffect(() => {
     runAnalysis()
-  }, [climate.bulan, climate.tahun])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [climate.bulan, climate.tahun, climate.ch_mm, climate.suhu, climate.kelembaban, climate.air_tanah])
 
   if (loading) {
     return (

@@ -67,6 +67,7 @@ export function useCurrentMonthClimate() {
   const [data, setData] = useState<ClimateData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isFallback, setIsFallback] = useState(false) // true jika data bukan bulan berjalan
 
   useEffect(() => {
     let cancelled = false
@@ -89,6 +90,7 @@ export function useCurrentMonthClimate() {
 
         if (exact) {
           setData(exact as ClimateData)
+          setIsFallback(false)
           setLoading(false)
           return
         }
@@ -110,8 +112,10 @@ export function useCurrentMonthClimate() {
             setError(err.message)
           }
           setData(null)
+          setIsFallback(false)
         } else {
           setData(latest as ClimateData ?? null)
+          setIsFallback(true) // data ini fallback, bukan bulan berjalan
         }
       } catch (e) {
         if (!cancelled) {
@@ -127,7 +131,7 @@ export function useCurrentMonthClimate() {
     return () => { cancelled = true }
   }, [])
 
-  return { data, loading, error }
+  return { data, loading, error, isFallback }
 }
 
 // Deteksi musim berdasarkan curah hujan

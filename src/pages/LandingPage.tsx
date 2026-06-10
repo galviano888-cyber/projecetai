@@ -32,7 +32,7 @@ export default function LandingPage() {
   // Dashboard data
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
   const { data: climateData, loading: climateLoading, error: climateError } = useClimateData(selectedYear)
-  const { data: currentClimate, error: currentClimateError } = useCurrentMonthClimate()
+  const { data: currentClimate, error: currentClimateError, isFallback: climateFallback } = useCurrentMonthClimate()
   const availableYears = useAvailableYears()
 
   // Memoize stat cards agar tidak dihitung ulang setiap render
@@ -266,6 +266,17 @@ export default function LandingPage() {
             </div>
           )}
 
+          {/* Fallback notice jika data bukan bulan berjalan */}
+          {climateFallback && currentClimate && (
+            <div className="mb-4 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <AlertTriangle className="size-4 shrink-0" />
+              <span>
+                Data iklim bulan ini belum tersedia. Rekomendasi dan grafik menggunakan data terakhir:
+                <strong> {new Date(0, (currentClimate.bulan ?? 1) - 1).toLocaleString('id-ID', { month: 'long' })} {currentClimate.tahun}</strong>.
+              </span>
+            </div>
+          )}
+
           {/* Climate Charts */}
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
@@ -307,7 +318,9 @@ export default function LandingPage() {
                 kelembaban: currentClimate.kelembaban,
                 air_tanah: currentClimate.air_tanah,
                 bulan: currentClimate.bulan,
+                tahun: currentClimate.tahun,
               } : null}
+              allClimateData={climateData}
             />
           </div>
         </div>

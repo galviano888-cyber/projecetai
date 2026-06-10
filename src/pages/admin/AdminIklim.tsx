@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { ClimateData } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge'
 import Papa from 'papaparse'
 import {
   CloudRain, Upload, Plus, CheckCircle2, AlertCircle,
-  Loader2, FileText, Trash2, RefreshCw
+  Loader2, FileText, Trash2, RefreshCw, Pencil, Database,
+  ChevronLeft, ChevronRight, X
 } from 'lucide-react'
 
 const BULAN_NAMES = [
@@ -26,17 +27,77 @@ const emptyForm: Omit<ClimateData, 'id' | 'created_at'> = {
   air_tanah: 0,
 }
 
+const PAGE_SIZE = 12
+
 type ToastType = { type: 'success' | 'error'; message: string } | null
 
 export default function AdminIklim() {
   const [form, setForm] = useState({ ...emptyForm })
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState<ToastType>(null)
   const [csvRows, setCsvRows] = useState<ClimateData[]>([])
   const [csvError, setCsvError] = useState('')
   const [uploading, setUploading] = useState(false)
-  const [activeTab, setActiveTab] = useState<'manual' | 'csv'>('manual')
+  const [activeTab, setActiveTab] = useState<'manual' | 'csv' | 'data'>('manual')
   const fileRef = useRef<HTMLInputElement>(null)
+
+  // State tabel data existing
+  const [existingData, setExistingData] = useState<ClimateData[]>([])
+  const [dataLoading, setDataLoading] = useState(false)
+  const [dataPage, setDataPage] = useState(1)
+  const [dataTotal, setDataTotal] = useState(0)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+
+  async function fetchExistingData(page = dataPage) {
+    setDataLoading(true)
+    const from = (page - 1) * PAGE_SIZE
+    const to = from + PAGE_SIZE - 1
+    const [{ data }, { count }] = await Promise.all([
+      supabase.from('climate_data').select('*')
+        .order('tahun', { ascending: false })
+        .order('bulan', { ascending: false })
+        .range(from, to),
+      supabase.from('climate_data').select('*', { count: 'exact', head: true }),
+    ])
+    setExistingData((data as ClimateData[]) ?? [])
+    setDataTotal(count ?? 0)
+    setDataLoading(false)
+  }
+
+  useEffect(() => {
+    if (activeTab === 'data') fetchExistingData(dataPage)
+  }, [activeTab, dataPage])
+
+  function openEdit(row: ClimateData) {
+    setEditingId(row.id ?? null)
+    setForm({
+      bulan: row.bulan,
+      tahun: row.tahun,
+      ch_mm: row.ch_mm,
+      suhu: row.suhu,
+      kelembaban: row.kelembaban,
+      air_tanah: row.air_tanah,
+    })
+    setActiveTab('manual')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setForm({ ...emptyForm })
+  }
+
+  async function handleDelete(id: string) {
+    const { error } = await supabase.from('climate_data').delete().eq('id', id)
+    if (error) {
+      showToast('error', `Gagal menghapus: ${error.message}`)
+    } else {
+      showToast('success', 'Data iklim berhasil dihapus.')
+      setDeleteConfirmId(null)
+      fetchExistingData(dataPage)
+    }
+  }
 
   function showToast(type: 'success' | 'error', message: string) {
     setToast({ type, message })
@@ -52,17 +113,25 @@ export default function AdminIklim() {
     e.preventDefault()
     setSaving(true)
 
-    const { error } = await supabase
-      .from('climate_data')
-      .upsert(form, { onConflict: 'bulan,tahun' })
+    let error
+    if (editingId) {
+      // Mode edit
+      ;({ error } = await supabase.from('climate_data').update(form).eq('id', editingId))
+    } else {
+      // Mode tambah baru
+      ;({ error } = await supabase.from('climate_data').upsert(form, { onConflict: 'bulan,tahun' }))
+    }
 
     setSaving(false)
 
     if (error) {
       showToast('error', `Gagal menyimpan: ${error.message}`)
     } else {
-      showToast('success', `Data iklim ${BULAN_NAMES[form.bulan]} ${form.tahun} berhasil disimpan.`)
+      showToast('success', `Data iklim ${BULAN_NAMES[form.bulan]} ${form.tahun} berhasil ${editingId ? 'diperbarui' : 'disimpan'}.`)
       setForm({ ...emptyForm })
+      setEditingId(null)
+      // Refresh tabel data jika sedang di tab data
+      if (activeTab === 'data') fetchExistingData(dataPage)
     }
   }
 
@@ -162,39 +231,49 @@ export default function AdminIklim() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 bg-muted rounded-xl w-fit">
-        <button
-          onClick={() => setActiveTab('manual')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-            activeTab === 'manual'
-              ? 'bg-white text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <span className="flex items-center gap-2">
-            <Plus className="size-3.5" /> Input Manual
-          </span>
-        </button>
-        <button
-          onClick={() => setActiveTab('csv')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-            activeTab === 'csv'
-              ? 'bg-white text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <span className="flex items-center gap-2">
-            <Upload className="size-3.5" /> Upload CSV
-          </span>
-        </button>
+      <div className="flex gap-1 p-1 bg-muted rounded-xl w-fit flex-wrap">
+        {([
+          { key: 'manual', icon: Plus, label: 'Input Manual' },
+          { key: 'csv',    icon: Upload, label: 'Upload CSV' },
+          { key: 'data',   icon: Database, label: `Data Tersimpan${dataTotal > 0 ? ` (${dataTotal})` : ''}` },
+        ] as const).map(({ key, icon: Icon, label }) => (
+          <button
+            key={key}
+            onClick={() => setActiveTab(key)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === key
+                ? 'bg-white text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <Icon className="size-3.5" /> {label}
+            </span>
+          </button>
+        ))}
       </div>
 
       {/* Tab: Manual */}
       {activeTab === 'manual' && (
-        <Card className="shadow-sm">
+        <Card className={`shadow-sm ${editingId ? 'border-agri-green/40' : ''}`}>
           <CardHeader className="pb-4">
-            <CardTitle className="text-base">Input Manual Per Bulan</CardTitle>
-            <CardDescription>Isi data iklim untuk satu bulan tertentu.</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base">
+                  {editingId ? 'Edit Data Iklim' : 'Input Manual Per Bulan'}
+                </CardTitle>
+                <CardDescription>
+                  {editingId
+                    ? `Mengedit data ${BULAN_NAMES[form.bulan]} ${form.tahun}`
+                    : 'Isi data iklim untuk satu bulan tertentu.'}
+                </CardDescription>
+              </div>
+              {editingId && (
+                <button onClick={cancelEdit} className="text-muted-foreground hover:text-foreground" aria-label="Batal edit">
+                  <X className="size-5" />
+                </button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmitManual} className="space-y-5">
@@ -265,17 +344,24 @@ export default function AdminIklim() {
                 />
               </div>
 
-              <Button
-                type="submit"
-                disabled={saving}
-                className="w-full sm:w-auto bg-agri-green hover:bg-agri-green-dark text-white font-semibold"
-              >
-                {saving ? (
-                  <><Loader2 className="size-4 mr-2 animate-spin" /> Menyimpan...</>
-                ) : (
-                  <><Plus className="size-4 mr-2" /> Simpan Data Iklim</>
+              <div className="flex gap-3">
+                <Button
+                  type="submit"
+                  disabled={saving}
+                  className="bg-agri-green hover:bg-agri-green-dark text-white font-semibold"
+                >
+                  {saving ? (
+                    <><Loader2 className="size-4 mr-2 animate-spin" /> Menyimpan...</>
+                  ) : editingId ? (
+                    <><CheckCircle2 className="size-4 mr-2" /> Perbarui Data</>
+                  ) : (
+                    <><Plus className="size-4 mr-2" /> Simpan Data Iklim</>
+                  )}
+                </Button>
+                {editingId && (
+                  <Button type="button" variant="outline" onClick={cancelEdit}>Batal</Button>
                 )}
-              </Button>
+              </div>
             </form>
           </CardContent>
         </Card>
@@ -413,6 +499,130 @@ export default function AdminIklim() {
           </Card>
         </div>
       )}
+
+      {/* Tab: Data Tersimpan */}
+      {activeTab === 'data' && (
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Data Iklim Tersimpan</CardTitle>
+                <CardDescription>{dataTotal} entri ditemukan</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="px-0 pb-0">
+            {dataLoading ? (
+              <div className="space-y-2 px-5 pb-5">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-10 rounded-lg bg-muted animate-pulse" />
+                ))}
+              </div>
+            ) : existingData.length === 0 ? (
+              <div className="px-5 pb-8 pt-4 text-center">
+                <CloudRain className="size-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">Belum ada data iklim tersimpan.</p>
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/40">
+                        {['Bulan', 'Tahun', 'CH (mm)', 'Suhu (°C)', 'Kelembaban (%)', 'Air Tanah', 'Aksi'].map(h => (
+                          <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {existingData.map((row, idx) => (
+                        <tr key={row.id} className={`border-b border-border/50 ${idx % 2 === 0 ? '' : 'bg-muted/20'}`}>
+                          <td className="px-4 py-2.5 font-medium">{BULAN_NAMES[row.bulan]}</td>
+                          <td className="px-4 py-2.5">{row.tahun}</td>
+                          <td className="px-4 py-2.5">{row.ch_mm}</td>
+                          <td className="px-4 py-2.5">{row.suhu}</td>
+                          <td className="px-4 py-2.5">{row.kelembaban}</td>
+                          <td className="px-4 py-2.5">{row.air_tanah}</td>
+                          <td className="px-4 py-2.5">
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => openEdit(row)}
+                                className="p-1.5 rounded-lg text-muted-foreground hover:text-agri-green hover:bg-agri-green-light transition-colors"
+                                title="Edit"
+                              >
+                                <Pencil className="size-3.5" />
+                              </button>
+                              <button
+                                onClick={() => setDeleteConfirmId(row.id!)}
+                                className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                title="Hapus"
+                              >
+                                <Trash2 className="size-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                {Math.ceil(dataTotal / PAGE_SIZE) > 1 && (
+                  <div className="flex items-center justify-center gap-2 py-4">
+                    <Button variant="outline" size="sm"
+                      onClick={() => setDataPage(p => Math.max(1, p - 1))}
+                      disabled={dataPage === 1}
+                    >
+                      <ChevronLeft className="size-4" />
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Halaman {dataPage} dari {Math.ceil(dataTotal / PAGE_SIZE)}
+                    </span>
+                    <Button variant="outline" size="sm"
+                      onClick={() => setDataPage(p => Math.min(Math.ceil(dataTotal / PAGE_SIZE), p + 1))}
+                      disabled={dataPage === Math.ceil(dataTotal / PAGE_SIZE)}
+                    >
+                      <ChevronRight className="size-4" />
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Delete confirm dialog */}
+      {deleteConfirmId && (() => {
+        const row = existingData.find(r => r.id === deleteConfirmId)
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+            <Card className="w-full max-w-sm shadow-2xl">
+              <CardContent className="pt-6 pb-6 text-center">
+                <div className="size-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+                  <Trash2 className="size-5 text-destructive" />
+                </div>
+                <p className="text-base font-semibold text-foreground">
+                  Hapus data {row ? `${BULAN_NAMES[row.bulan]} ${row.tahun}` : ''}?
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Tindakan ini tidak bisa dibatalkan.
+                </p>
+                <div className="flex gap-3 mt-5 justify-center">
+                  <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>Batal</Button>
+                  <Button
+                    className="bg-destructive hover:bg-destructive/90 text-white"
+                    onClick={() => handleDelete(deleteConfirmId)}
+                  >
+                    Ya, Hapus
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )
+      })()}
     </div>
   )
 }
