@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { Link } from "react-router-dom"
 import { CloudRain, BrainCircuit, CircleCheck as CheckCircle2, Lightbulb, Sprout, Menu, X, ChevronDown, Droplets, TrendingUp, TriangleAlert as AlertTriangle, BarChart2, CalendarDays } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -198,6 +199,7 @@ export default function LandingPage() {
     { label: "Beranda", href: "#beranda" },
     { label: "Dashboard", href: "#dashboard" },
     { label: "Analisis", href: "#analisis" },
+    { label: "Library", href: "/library" },
     { label: "Edukasi", href: "#edukasi" },
     { label: "Profil", href: "#profil" },
   ]
@@ -266,19 +268,18 @@ export default function LandingPage() {
             </a>
 
             <nav className="hidden md:flex items-center gap-1">
-              {navLinks.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    scrolled
-                      ? "text-foreground hover:bg-agri-green-light hover:text-agri-green-dark"
-                      : "text-white/90 hover:text-white hover:bg-white/10"
-                  }`}
-                >
-                  {link.label}
-                </a>
-              ))}
+              {navLinks.map((link) => {
+                const cls = `px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  scrolled
+                    ? "text-foreground hover:bg-agri-green-light hover:text-agri-green-dark"
+                    : "text-white/90 hover:text-white hover:bg-white/10"
+                }`
+                return link.href.startsWith('/') ? (
+                  <Link key={link.label} to={link.href} className={cls}>{link.label}</Link>
+                ) : (
+                  <a key={link.label} href={link.href} className={cls}>{link.label}</a>
+                )
+              })}
               <Button
                 size="sm"
                 className="ml-2 bg-agri-green hover:bg-agri-green-dark text-white shadow-sm"
@@ -300,16 +301,14 @@ export default function LandingPage() {
 
         {menuOpen && (
           <div className="md:hidden bg-white border-b border-border shadow-lg px-4 pb-4">
-            {navLinks.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                onClick={() => setMenuOpen(false)}
-                className="block py-2.5 text-sm font-medium text-foreground hover:text-agri-green border-b border-border/50 last:border-0"
-              >
-                {link.label}
-              </a>
-            ))}
+            {navLinks.map((link) => {
+              const cls = "block py-2.5 text-sm font-medium text-foreground hover:text-agri-green border-b border-border/50 last:border-0"
+              return link.href.startsWith('/') ? (
+                <Link key={link.label} to={link.href} onClick={() => setMenuOpen(false)} className={cls}>{link.label}</Link>
+              ) : (
+                <a key={link.label} href={link.href} onClick={() => setMenuOpen(false)} className={cls}>{link.label}</a>
+              )
+            })}
             <Button
               className="mt-3 w-full bg-agri-green hover:bg-agri-green-dark text-white"
               onClick={() => {

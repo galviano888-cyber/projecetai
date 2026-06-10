@@ -1,5 +1,7 @@
 import { Routes, Route } from "react-router-dom"
 import LandingPage from "./pages/LandingPage"
+import LibraryPage from "./pages/LibraryPage"
+import LibraryDetailPage from "./pages/LibraryDetailPage"
 import AdminLogin from "./pages/admin/AdminLogin"
 import AdminLayout from "./pages/admin/AdminLayout"
 import AdminDashboard from "./pages/admin/AdminDashboard"
@@ -13,6 +15,8 @@ export default function App() {
     <Routes>
       {/* User-facing */}
       <Route path="/" element={<LandingPage />} />
+      <Route path="/library" element={<LibraryPage />} />
+      <Route path="/library/:id" element={<LibraryDetailPage />} />
 
       {/* Admin auth */}
       <Route path="/admin/login" element={<AdminLogin />} />
