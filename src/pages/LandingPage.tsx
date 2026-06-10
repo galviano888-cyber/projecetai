@@ -87,13 +87,7 @@ export default function LandingPage() {
                   <a key={link.label} href={link.href} className={cls}>{link.label}</a>
                 )
               })}
-              <Button
-                size="sm"
-                className="ml-2 bg-agri-green hover:bg-agri-green-dark text-white shadow-sm"
-                onClick={() => document.getElementById("analisis")?.scrollIntoView({ behavior: "smooth" })}
-              >
-                Mulai Analisis
-              </Button>
+
             </nav>
 
             <button
@@ -116,15 +110,7 @@ export default function LandingPage() {
                 <a key={link.label} href={link.href} onClick={() => setMenuOpen(false)} className={cls}>{link.label}</a>
               )
             })}
-            <Button
-              className="mt-3 w-full bg-agri-green hover:bg-agri-green-dark text-white"
-              onClick={() => {
-                setMenuOpen(false)
-                document.getElementById("analisis")?.scrollIntoView({ behavior: "smooth" })
-              }}
-            >
-              Mulai Analisis
-            </Button>
+
           </div>
         )}
       </header>
@@ -167,9 +153,9 @@ export default function LandingPage() {
             <Button
               size="lg"
               className="bg-agri-yellow hover:bg-amber-400 text-amber-900 font-bold px-8 py-6 text-base shadow-xl hover:shadow-2xl transition-all hover:-translate-y-0.5"
-              onClick={() => document.getElementById("analisis")?.scrollIntoView({ behavior: "smooth" })}
+              onClick={() => document.getElementById("dashboard")?.scrollIntoView({ behavior: "smooth" })}
             >
-              Mulai Analisis
+              Lihat Dashboard
               <ChevronDown className="size-4 ml-1" />
             </Button>
             <Button
