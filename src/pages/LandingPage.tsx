@@ -8,6 +8,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { ClimateCharts } from "@/components/ClimateCharts"
 import { PlantingCalendar } from "@/components/PlantingCalendar"
 import { SeasonIndicator } from "@/components/SeasonIndicator"
+import { RecommendationCard } from "@/components/RecommendationCard"
 import { useClimateData, useCurrentMonthClimate, useAvailableYears } from "@/hooks/useClimateData"
 
 type WaterAvailability = "Sangat Cukup" | "Cukup" | "Sedang" | "Kurang" | "Sangat Kurang" | ""
@@ -471,6 +472,24 @@ export default function LandingPage() {
             </div>
             <ClimateCharts data={climateData} />
           </div>
+
+          {/* Rekomendasi Sistem Pakar */}
+          {currentClimate && (
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-2">
+                <Sprout className="size-4 text-agri-green" />
+                <h3 className="text-base font-semibold text-foreground">Rekomendasi Komoditas Bulan Ini</h3>
+                <Badge className="text-xs bg-agri-green/10 text-agri-green-dark border-agri-green/20">
+                  Top 3
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mb-4">
+                Dihitung otomatis menggunakan sistem pakar rule-based berbasis data iklim terkini.
+                Metode: Forward Chaining + Weighted Certainty Factor.
+              </p>
+              <RecommendationCard climate={currentClimate} topN={3} />
+            </div>
+          )}
 
           {/* Planting Calendar */}
           <div>
