@@ -371,14 +371,38 @@ export default function LandingPage() {
             <Badge className="mb-3 bg-agri-blue/10 text-agri-blue border-agri-blue/20 hover:bg-agri-blue/10">Transparansi Sistem</Badge>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground mb-3">Bagaimana Sistem Ini Bekerja?</h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Metodologi ilmiah berbasis klimatologi dan kecerdasan buatan untuk menghasilkan rekomendasi yang akurat.
+              Data iklim dari admin diproses otomatis oleh sistem pakar untuk menghasilkan rekomendasi komoditas yang akurat setiap bulannya.
             </p>
           </div>
           <div className="grid gap-8 md:grid-cols-3">
             {[
-              { step: "01", icon: CloudRain, title: "Input Data", subtitle: "Data Iklim & ATKABT", description: "Pengguna memasukkan parameter prediksi curah hujan dan indeks ketersediaan air tanah (ATKABT) yang bersumber dari portal iklim resmi wilayah Jawa Tengah.", iconBg: "bg-agri-green/10", iconColor: "text-agri-green", borderColor: "border-agri-green/30", stepBg: "bg-agri-green text-white", subtitleColor: "text-agri-green" },
-              { step: "02", icon: BrainCircuit, title: "Forward Chaining", subtitle: "Pencocokan Aturan Klimatologi", description: "Mesin inferensi mencocokkan data input dengan basis aturan standar klimatologi menggunakan metode Forward Chaining.", iconBg: "bg-agri-blue/10", iconColor: "text-agri-blue", borderColor: "border-agri-blue/30", stepBg: "bg-agri-blue text-white", subtitleColor: "text-agri-blue" },
-              { step: "03", icon: CheckCircle2, title: "Certainty Factor", subtitle: "Penghitungan Tingkat Keyakinan AI", description: "Sistem menghitung nilai Certainty Factor (CF) berdasarkan kombinasi kepercayaan pakar dan kekuatan bukti dari data iklim.", iconBg: "bg-agri-yellow/20", iconColor: "text-amber-700", borderColor: "border-agri-yellow/40", stepBg: "bg-agri-yellow text-amber-900", subtitleColor: "text-amber-700" },
+              {
+                step: "01",
+                icon: CloudRain,
+                title: "Data Iklim Masuk",
+                subtitle: "Input oleh Admin",
+                description: "Admin memasukkan data iklim bulanan Kabupaten Demak — curah hujan, suhu, kelembaban, dan ketersediaan air tanah — berdasarkan data resmi BMKG dan Stasiun Klimatologi Jawa Tengah.",
+                iconBg: "bg-agri-green/10", iconColor: "text-agri-green",
+                borderColor: "border-agri-green/30", stepBg: "bg-agri-green text-white", subtitleColor: "text-agri-green"
+              },
+              {
+                step: "02",
+                icon: BrainCircuit,
+                title: "Sistem Pakar Berjalan",
+                subtitle: "Forward Chaining Otomatis",
+                description: "Mesin inferensi secara otomatis mencocokkan data iklim dengan syarat tumbuh tiap komoditas menggunakan metode Forward Chaining berbasis aturan ilmiah dari BBSDLP (Ritung et al., 2011).",
+                iconBg: "bg-agri-blue/10", iconColor: "text-agri-blue",
+                borderColor: "border-agri-blue/30", stepBg: "bg-agri-blue text-white", subtitleColor: "text-agri-blue"
+              },
+              {
+                step: "03",
+                icon: CheckCircle2,
+                title: "Rekomendasi Tampil",
+                subtitle: "Skor & Grade Kecocokan",
+                description: "Setiap komoditas mendapat skor kecocokan 0–100% menggunakan Weighted Certainty Factor. Top 3 komoditas terbaik ditampilkan langsung di dashboard beserta alasan dan detail parameternya.",
+                iconBg: "bg-agri-yellow/20", iconColor: "text-amber-700",
+                borderColor: "border-agri-yellow/40", stepBg: "bg-agri-yellow text-amber-900", subtitleColor: "text-amber-700"
+              },
             ].map((item) => (
               <Card key={item.step} className={`h-full border-2 ${item.borderColor} rounded-2xl shadow-md hover:shadow-xl transition-all hover:-translate-y-1 group`}>
                 <CardContent className="p-8">
@@ -401,9 +425,9 @@ export default function LandingPage() {
               <Sprout className="size-6 text-agri-green" />
             </div>
             <div className="text-center sm:text-left">
-              <p className="font-semibold text-foreground">Berbasis Data Klimatologi Resmi</p>
+              <p className="font-semibold text-foreground">Berbasis Referensi Ilmiah Terverifikasi</p>
               <p className="text-sm text-muted-foreground mt-0.5">
-                Sistem ini mengintegrasikan luaran data teknis dari Stasiun Klimatologi Jawa Tengah serta parameter analisis Deputi Bidang Klimatologi sebagai basis aturan mesin inferensi.
+                Parameter syarat tumbuh komoditas bersumber dari Ritung et al. (2011) BBSDLP Badan Litbang Pertanian, FAO AQUASTAT (2002), IRRI Knowledge Bank (2023), serta Balitsa dan Balitkabi.
               </p>
             </div>
           </div>
