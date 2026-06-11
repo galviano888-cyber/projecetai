@@ -36,7 +36,6 @@ import {
   THRESHOLD_TANAMAN,
   klasifikasiOldeman,
   DEFAULT_CF_RULE,
-  CF_EVIDENCE,
   type TanamanThreshold,
   type OldemanKelas,
   type CfRule,
@@ -184,56 +183,60 @@ function evaluasiKat(kat: number | undefined, t: TanamanThreshold['threshold']):
   return 'N'
 }
 
-// ─── Certainty Factor (Metode MYCIN) ───────────────────────────────────────────
+// ─── Certainty Factor (Metode Berbasis Derajat Kecocokan) ──────────────────────
+
+/**
+ * CF[evidence] bertingkat sesuai derajat kecocokan fakta terhadap syarat
+ * tumbuh (hasil evaluasi kelas kesesuaian lahan Djaenudin 2011 / Oldeman 1975).
+ *
+ *   S1 (Sangat Sesuai)  → 1.0  (bukti mendukung penuh)
+ *   S2 (Cukup Sesuai)   → 0.6  (bukti mendukung sebagian)
+ *   S3 (Marginal)       → 0.3  (bukti lemah)
+ *   N  (Tidak Sesuai)   → -1.0 (bukti menolak)
+ *
+ * Ref: skala derajat keyakinan bukti pada Certainty Factor
+ * (Shortliffe & Buchanan, 1975), disesuaikan dengan kelas kesesuaian lahan.
+ */
+const CF_EVIDENCE_KELAS: Record<KelasKesesuaian, number> = {
+  S1: 1.0,
+  S2: 0.6,
+  S3: 0.3,
+  N: -1.0,
+}
+
+/**
+ * CF satu parameter = CF[rule] (keyakinan pakar) × CF[evidence] (derajat
+ * kecocokan fakta). Rentang -CF[rule] .. +CF[rule].
+ */
+function cfParameter(kelas: KelasKesesuaian, cfRule: number): number {
+  return cfRule * CF_EVIDENCE_KELAS[kelas]
+}
+
+/**
+ * CF gabungan satu fase = rata-rata berbobot CF tiap parameter, dengan
+ * bobot = CF[rule] parameter tersebut. Parameter yang lebih kritis (CH)
+ * memberi kontribusi lebih besar.
+ *
+ * Tidak memakai penjumlahan MYCIN agar nilai tidak jenuh ke 1.0 dan tetap
+ * proporsional terhadap derajat kecocokan tiap parameter.
+ */
+function cfGabunganFase(
+  cfParams: { cf: number; bobot: number }[]
+): number {
+  const totalBobot = cfParams.reduce((s, p) => s + p.bobot, 0)
+  if (totalBobot === 0) return 0
+  return cfParams.reduce((s, p) => s + p.cf, 0) / totalBobot
+}
 
 /**
  * Kombinasi dua nilai CF (rumus MYCIN / Shortliffe-Buchanan 1975).
- *
- *   cf1, cf2 >= 0  : CF = cf1 + cf2 * (1 - cf1)
- *   cf1, cf2 <= 0  : CF = cf1 + cf2 * (1 + cf1)
- *   tanda berbeda  : CF = (cf1 + cf2) / (1 - min(|cf1|, |cf2|))
+ * Dipertahankan untuk keperluan kompatibilitas/utilitas.
  */
 export function kombinasiCF(cf1: number, cf2: number): number {
-  if (cf1 >= 0 && cf2 >= 0) {
-    return cf1 + cf2 * (1 - cf1)
-  }
-  if (cf1 <= 0 && cf2 <= 0) {
-    return cf1 + cf2 * (1 + cf1)
-  }
+  if (cf1 >= 0 && cf2 >= 0) return cf1 + cf2 * (1 - cf1)
+  if (cf1 <= 0 && cf2 <= 0) return cf1 + cf2 * (1 + cf1)
   const minAbs = Math.min(Math.abs(cf1), Math.abs(cf2))
-  // hindari pembagian nol
   return minAbs === 1 ? (cf1 + cf2) : (cf1 + cf2) / (1 - minAbs)
-}
-
-/**
- * Gabungkan array CF berurutan dengan rumus MYCIN.
- */
-function kombinasiCFList(cfs: number[]): number {
-  if (cfs.length === 0) return 0
-  return cfs.reduce((acc, cf) => kombinasiCF(acc, cf))
-}
-
-/**
- * Hitung CF satu parameter pada satu fase.
- *
- * Aturan menyala berdasarkan apakah parameter MENDUKUNG atau MENGHAMBAT:
- *   - kelas N (di luar rentang sama sekali) → aturan menghambat → CF negatif
- *   - selain N (S1/S2/S3, parameter masih dalam rentang sesuai) → mendukung
- *
- * Besar CF = CF[rule] (keyakinan pakar) × CF[evidence] (keyakinan data).
- * Tanda CF ditentukan oleh apakah fakta mendukung atau menghambat aturan.
- *
- * CATATAN: besar CF TIDAK bergantung pada kelas S1/S2/S3 (sesuai permintaan).
- * Yang menentukan hanya: parameter masuk akal (mendukung) atau tidak (menghambat).
- */
-function cfParameter(
-  kelas: KelasKesesuaian,
-  cfRule: number,
-  cfEvidence: number
-): number {
-  const besar = cfRule * cfEvidence
-  // N = fakta menghambat aturan kesesuaian → CF negatif
-  return kelas === 'N' ? -besar : besar
 }
 
 // ─── Engine Utama (Forward Chaining + Certainty Factor) ────────────────────────
@@ -260,15 +263,13 @@ export function cfKeLabelUser(cf: number): LabelUser {
  * @param tahunTanam - Tahun tanam
  * @param iklimMap   - Map dari key "bulan-tahun" ke data iklim (fakta)
  * @param cfRule     - CF[rule] per parameter (keyakinan pakar)
- * @param cfEvidence - CF[evidence] keyakinan data
  */
 export function hitungKalenderTanam(
   tanaman: TanamanThreshold,
   bulanTanam: number,
   tahunTanam: number,
   iklimMap: Map<string, IklimBulan>,
-  cfRule: CfRule = DEFAULT_CF_RULE,
-  cfEvidence: number = CF_EVIDENCE
+  cfRule: CfRule = DEFAULT_CF_RULE
 ): HasilKalenderTanam {
   const detail: DetailBulanTanam[] = []
   let dataLengkap = true
@@ -310,13 +311,18 @@ export function hitungKalenderTanam(
     const kelasKat  = evaluasiKat(iklim.kat, tanaman.threshold)
 
     // ─── Forward Chaining: nyalakan aturan, hitung CF tiap parameter ───
-    const cfCh   = cfParameter(kelasCh,   cfRule.ch,   cfEvidence)
-    const cfSuhu = cfParameter(kelasSuhu, cfRule.suhu, cfEvidence)
-    const cfRh   = cfParameter(kelasRh,   cfRule.rh,   cfEvidence)
-    const cfKat  = cfParameter(kelasKat,  cfRule.kat,  cfEvidence)
+    const cfCh   = cfParameter(kelasCh,   cfRule.ch)
+    const cfSuhu = cfParameter(kelasSuhu, cfRule.suhu)
+    const cfRh   = cfParameter(kelasRh,   cfRule.rh)
+    const cfKat  = cfParameter(kelasKat,  cfRule.kat)
 
-    // CF gabungan fase = kombinasi CF 4 parameter (rumus MYCIN)
-    const cfFase = kombinasiCFList([cfCh, cfSuhu, cfRh, cfKat])
+    // CF gabungan fase = rata-rata berbobot CF 4 parameter (bobot = CF[rule])
+    const cfFase = cfGabunganFase([
+      { cf: cfCh,   bobot: cfRule.ch },
+      { cf: cfSuhu, bobot: cfRule.suhu },
+      { cf: cfRh,   bobot: cfRule.rh },
+      { cf: cfKat,  bobot: cfRule.kat },
+    ])
     cfFaseList.push(cfFase)
 
     detail.push({
@@ -333,8 +339,10 @@ export function hitungKalenderTanam(
     })
   }
 
-  // CF total = kombinasi CF semua fase (rumus MYCIN)
-  const cfTotal = kombinasiCFList(cfFaseList)
+  // CF total = CF fase TERENDAH (hukum faktor pembatas / Liebig).
+  // Satu fase tumbuh yang buruk menentukan keseluruhan, karena tanaman
+  // gagal bila kebutuhannya tak terpenuhi pada salah satu fase kritis.
+  const cfTotal = cfFaseList.length > 0 ? Math.min(...cfFaseList) : 0
   const cfTotalClamp = Math.max(-1, Math.min(1, cfTotal))
   const persenKeyakinan = Math.round(cfTotalClamp * 100)
 
