@@ -29,7 +29,7 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-agri-green-dark via-agri-green to-agri-green-light flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-agri-green-dark via-agri-green to-agri-green-dark flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
