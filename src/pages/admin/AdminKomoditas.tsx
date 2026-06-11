@@ -126,6 +126,7 @@ export default function AdminKomoditas() {
     setForm({
       nama: c.nama, nama_ilmiah: c.nama_ilmiah ?? '',
       deskripsi: c.deskripsi ?? '',
+      foto_url: c.foto_url ?? '',
       ch_min: c.ch_min, ch_max: c.ch_max,
       suhu_min: c.suhu_min, suhu_max: c.suhu_max,
       kelembaban_min: c.kelembaban_min, kelembaban_max: c.kelembaban_max,
@@ -320,7 +321,7 @@ export default function AdminKomoditas() {
                   <NumericInput name="suhu_max" label="Suhu Max (°C)" value={form.suhu_max} onChange={handleChange} />
                   <NumericInput name="kelembaban_min" label="Kelembaban Min (%)" value={form.kelembaban_min} onChange={handleChange} />
                   <NumericInput name="kelembaban_max" label="Kelembaban Max (%)" value={form.kelembaban_max} onChange={handleChange} />
-                  <NumericInput name="air_tanah_min" label="Air Tanah Min (mm/hr)" value={form.air_tanah_min} onChange={handleChange} />
+                  <NumericInput name="air_tanah_min" label="Air Tanah Min (%)" value={form.air_tanah_min} onChange={handleChange} />
                 </div>
               </fieldset>
 
@@ -423,7 +424,7 @@ export default function AdminKomoditas() {
                   <InfoCell label="CH" value={c.ch_min != null ? `${c.ch_min}–${c.ch_max} mm` : '—'} />
                   <InfoCell label="Suhu" value={c.suhu_min != null ? `${c.suhu_min}–${c.suhu_max} °C` : '—'} />
                   <InfoCell label="Kelembaban" value={c.kelembaban_min != null ? `${c.kelembaban_min}–${c.kelembaban_max} %` : '—'} />
-                  <InfoCell label="Air Tanah Min" value={c.air_tanah_min != null ? `${c.air_tanah_min} mm/hr` : '—'} />
+                  <InfoCell label="Air Tanah Min" value={c.air_tanah_min != null ? `${c.air_tanah_min}%` : '—'} />
                   {c.waktu_tanam && <InfoCell label="Waktu Tanam" value={c.waktu_tanam} />}
                   {c.durasi_panen && <InfoCell label="Durasi Panen" value={c.durasi_panen} />}
                   {c.jarak_tanam && <InfoCell label="Jarak Tanam" value={c.jarak_tanam} />}

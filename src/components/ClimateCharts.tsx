@@ -182,7 +182,7 @@ export function ClimateCharts({ data }: ClimateChartsProps) {
       {/* Air Tanah */}
       <ChartCard
         title="Ketersediaan Air Tanah"
-        subtitle="mm/hari"
+        subtitle="%"
         icon={Layers}
         iconColor="text-purple-500"
         iconBg="bg-purple-500/10"
@@ -206,7 +206,7 @@ export function ClimateCharts({ data }: ClimateChartsProps) {
               tick={{ fontSize: 11, fill: '#888' }}
               axisLine={false}
               tickLine={false}
-              unit=" mm"
+              unit=" %"
             />
             <Tooltip content={<TooltipAir />} />
             <Area
@@ -240,7 +240,7 @@ function makeTooltip(unit: string) {
 const TooltipMM = makeTooltip('mm')
 const TooltipC = makeTooltip('°C')
 const TooltipPct = makeTooltip('%')
-const TooltipAir = makeTooltip('mm/hr')
+const TooltipAir = makeTooltip('%')
 
 // Chart Card wrapper
 interface ChartCardProps {

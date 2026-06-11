@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import type { Commodity, Library } from '@/lib/supabase'
-import { useCurrentMonthClimate } from '@/hooks/useClimateData'
-import { scoreCommodity } from '@/lib/expertSystem'
+import { useCurrentClimate } from '@/contexts/ClimateContext'
+import { useCfTanaman } from '@/hooks/useKalenderTanam'
+import { LABEL_USER_TEKS, type KelasKesesuaian } from '@/lib/kalenderTanam'
 import { Card, CardContent } from '@/components/ui/card'
 import { RichContent } from '@/components/RichTextEditor'
 import {
@@ -23,7 +24,7 @@ export default function LibraryDetailPage() {
   const [commodity, setCommodity] = useState<Commodity | null>(null)
   const [library, setLibrary] = useState<Library | null>(null)
   const [loading, setLoading] = useState(true)
-  const { data: currentClimate } = useCurrentMonthClimate()
+  const { currentClimate } = useCurrentClimate()
 
   useEffect(() => {
     if (!id) return
@@ -39,9 +40,27 @@ export default function LibraryDetailPage() {
     fetchData()
   }, [id])
 
-  const scoreResult = commodity && currentClimate
-    ? scoreCommodity(commodity, currentClimate)
-    : null
+  const bulanSekarang = currentClimate?.bulan ?? new Date().getMonth() + 1
+  const tahunSekarang = currentClimate?.tahun ?? new Date().getFullYear()
+  const { hasil: cf } = useCfTanaman(commodity?.nama, bulanSekarang, tahunSekarang)
+
+  // Derive status terburuk tiap parameter dari seluruh fase (untuk SyaratCard)
+  const paramStatus = useMemo(() => {
+    const order: KelasKesesuaian[] = ['S1', 'S2', 'S3', 'N']
+    const worst = (vals: KelasKesesuaian[]): KelasKesesuaian =>
+      vals.reduce((w, v) => (order.indexOf(v) > order.indexOf(w) ? v : w), 'S1')
+    const toStatus = (k: KelasKesesuaian): 'optimal' | 'marjinal' | 'tidak' =>
+      k === 'S1' ? 'optimal' : k === 'N' ? 'tidak' : 'marjinal'
+    if (!cf) return null
+    const ada = cf.detail.filter(d => d.dataAda)
+    if (ada.length === 0) return null
+    return {
+      ch:   toStatus(worst(ada.map(d => d.kelasCh))),
+      suhu: toStatus(worst(ada.map(d => d.kelasSuhu))),
+      rh:   toStatus(worst(ada.map(d => d.kelasRh))),
+      kat:  toStatus(worst(ada.map(d => d.kelasKat))),
+    }
+  }, [cf])
 
   const bulanIni = currentClimate
     ? new Date(0, currentClimate.bulan - 1).toLocaleString('id-ID', { month: 'long' })
@@ -101,15 +120,14 @@ export default function LibraryDetailPage() {
                     {musimCfg.label}
                   </span>
                 )}
-                {scoreResult && (
+                {cf && (
                   <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                    scoreResult.grade === 'S1' ? 'bg-agri-green text-white' :
-                    scoreResult.grade === 'S2' ? 'bg-agri-yellow text-amber-900' :
-                    scoreResult.grade === 'S3' ? 'bg-orange-400 text-white' :
+                    cf.labelUser === 'cocok' ? 'bg-agri-green text-white' :
+                    cf.labelUser === 'cukup' ? 'bg-agri-yellow text-amber-900' :
                     'bg-white/20 text-white'
                   }`}>
-                    {scoreResult.grade === 'S1' && <Sprout className="size-2.5" />}
-                    {scoreResult.grade_label} {bulanIni && `(${bulanIni})`}
+                    {cf.labelUser === 'cocok' && <Sprout className="size-2.5" />}
+                    {LABEL_USER_TEKS[cf.labelUser]} {bulanIni && `(${bulanIni})`}
                   </span>
                 )}
               </div>
@@ -120,24 +138,26 @@ export default function LibraryDetailPage() {
             </div>
           </div>
 
-          {/* Score bar */}
-          {scoreResult && (
+          {/* CF bar */}
+          {cf && (
             <div className="mt-5 bg-white/10 rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-white/80">Kecocokan Iklim Bulan Ini ({bulanIni})</span>
-                <span className="text-lg font-bold text-agri-yellow">{scoreResult.skor_kecocokan}%</span>
+                <span className="text-sm text-white/80">Certainty Factor jika tanam {bulanIni}</span>
+                <span className="text-lg font-bold text-agri-yellow">{cf.persenKeyakinan}%</span>
               </div>
               <div className="h-2.5 w-full rounded-full bg-white/20 overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-700 ${
-                    scoreResult.skor_kecocokan >= 75 ? 'bg-agri-green' :
-                    scoreResult.skor_kecocokan >= 50 ? 'bg-agri-yellow' :
-                    scoreResult.skor_kecocokan >= 25 ? 'bg-orange-400' : 'bg-red-400'
+                    cf.persenKeyakinan >= 70 ? 'bg-agri-green' :
+                    cf.persenKeyakinan >= 40 ? 'bg-agri-yellow' : 'bg-red-400'
                   }`}
-                  style={{ width: `${scoreResult.skor_kecocokan}%` }}
+                  style={{ width: `${Math.max(0, cf.persenKeyakinan)}%` }}
                 />
               </div>
-              <p className="text-xs text-white/60 mt-2">{scoreResult.catatan}</p>
+              <p className="text-xs text-white/60 mt-2">
+                Panen {new Date(0, cf.bulanPanen - 1).toLocaleString('id-ID', { month: 'long' })} {cf.tahunPanen}.
+                Metode: Forward Chaining + Certainty Factor (Shortliffe &amp; Buchanan, 1975).
+              </p>
             </div>
           )}
         </div>
@@ -159,7 +179,7 @@ export default function LibraryDetailPage() {
                   label="Curah Hujan"
                   value={`${commodity.ch_min}–${commodity.ch_max}`}
                   unit="mm/bln"
-                  status={scoreResult?.detail.find(d => d.parameter === 'Curah Hujan')?.status}
+                  status={paramStatus?.ch}
                 />
               )}
               {commodity.suhu_min != null && (
@@ -170,7 +190,7 @@ export default function LibraryDetailPage() {
                   label="Suhu"
                   value={`${commodity.suhu_min}–${commodity.suhu_max}`}
                   unit="°C"
-                  status={scoreResult?.detail.find(d => d.parameter === 'Suhu')?.status}
+                  status={paramStatus?.suhu}
                 />
               )}
               {commodity.kelembaban_min != null && (
@@ -181,7 +201,7 @@ export default function LibraryDetailPage() {
                   label="Kelembaban"
                   value={`${commodity.kelembaban_min}–${commodity.kelembaban_max}`}
                   unit="%"
-                  status={scoreResult?.detail.find(d => d.parameter === 'Kelembaban')?.status}
+                  status={paramStatus?.rh}
                 />
               )}
               {commodity.air_tanah_min != null && (
@@ -191,8 +211,8 @@ export default function LibraryDetailPage() {
                   iconBg="bg-purple-500/10"
                   label="Air Tanah Min"
                   value={`≥${commodity.air_tanah_min}`}
-                  unit="mm/hr"
-                  status={scoreResult?.detail.find(d => d.parameter === 'Air Tanah')?.status}
+                  unit="%"
+                  status={paramStatus?.kat}
                 />
               )}
             </div>

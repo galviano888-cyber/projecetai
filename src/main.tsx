@@ -5,12 +5,15 @@ import { BrowserRouter } from "react-router-dom"
 import "./index.css"
 import App from "./App.tsx"
 import { ThemeProvider } from "@/components/theme-provider.tsx"
+import { ClimateProvider } from "@/contexts/ClimateContext.tsx"
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
       <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-        <App />
+        <ClimateProvider>
+          <App />
+        </ClimateProvider>
       </ThemeProvider>
     </BrowserRouter>
   </StrictMode>

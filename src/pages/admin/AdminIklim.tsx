@@ -109,8 +109,27 @@ export default function AdminIklim() {
     setForm((prev) => ({ ...prev, [name]: name === 'bulan' || name === 'tahun' ? parseInt(value) : parseFloat(value) || 0 }))
   }
 
+  function validateForm(): string | null {
+    if (form.ch_mm < 0 || form.ch_mm > 2000)
+      return 'Curah hujan harus antara 0–2000 mm/bulan.'
+    if (form.suhu < 0 || form.suhu > 50)
+      return 'Suhu harus antara 0–50 °C.'
+    if (form.kelembaban < 0 || form.kelembaban > 100)
+      return 'Kelembaban harus antara 0–100%.'
+    if (form.air_tanah < 0 || form.air_tanah > 100)
+      return 'Air tanah harus antara 0–100%.'
+    return null
+  }
+
   async function handleSubmitManual(e: React.FormEvent) {
     e.preventDefault()
+
+    const validationError = validateForm()
+    if (validationError) {
+      showToast('error', validationError)
+      return
+    }
+
     setSaving(true)
 
     let error
@@ -158,10 +177,18 @@ export default function AdminIklim() {
 
           if (isNaN(bulan) || bulan < 1 || bulan > 12)
             errors.push(`Baris ${idx + 2}: kolom 'bulan' tidak valid (${row.bulan})`)
-          else if (isNaN(tahun))
-            errors.push(`Baris ${idx + 2}: kolom 'tahun' tidak valid`)
+          else if (isNaN(tahun) || tahun < 2000 || tahun > 2100)
+            errors.push(`Baris ${idx + 2}: kolom 'tahun' tidak valid (harus 2000–2100)`)
           else if (isNaN(ch_mm) || isNaN(suhu) || isNaN(kelembaban) || isNaN(air_tanah))
             errors.push(`Baris ${idx + 2}: ada kolom angka yang tidak valid`)
+          else if (ch_mm < 0 || ch_mm > 2000)
+            errors.push(`Baris ${idx + 2}: curah hujan di luar rentang valid (0–2000 mm)`)
+          else if (suhu < 0 || suhu > 50)
+            errors.push(`Baris ${idx + 2}: suhu di luar rentang valid (0–50 °C)`)
+          else if (kelembaban < 0 || kelembaban > 100)
+            errors.push(`Baris ${idx + 2}: kelembaban di luar rentang valid (0–100%)`)
+          else if (air_tanah < 0 || air_tanah > 100)
+            errors.push(`Baris ${idx + 2}: air tanah di luar rentang valid (0–100%)`)
           else
             rows.push({ bulan, tahun, ch_mm, suhu, kelembaban, air_tanah })
         })
@@ -317,6 +344,8 @@ export default function AdminIklim() {
                   value={form.ch_mm}
                   onChange={handleFormChange}
                   hint="Contoh: 150.5"
+                  min={0}
+                  max={2000}
                 />
                 <FormField
                   name="suhu"
@@ -325,6 +354,8 @@ export default function AdminIklim() {
                   value={form.suhu}
                   onChange={handleFormChange}
                   hint="Contoh: 27.3"
+                  min={0}
+                  max={50}
                 />
                 <FormField
                   name="kelembaban"
@@ -333,14 +364,18 @@ export default function AdminIklim() {
                   value={form.kelembaban}
                   onChange={handleFormChange}
                   hint="Contoh: 78"
+                  min={0}
+                  max={100}
                 />
                 <FormField
                   name="air_tanah"
-                  label="Ketersediaan Air Tanah"
-                  unit="mm/hari"
+                  label="Ketersediaan Air Tanah (KAT)"
+                  unit="%"
                   value={form.air_tanah}
                   onChange={handleFormChange}
-                  hint="Contoh: 3.2"
+                  hint="Contoh: 65 (% kapasitas lapang)"
+                  min={0}
+                  max={100}
                 />
               </div>
 
@@ -455,7 +490,7 @@ export default function AdminIklim() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="bg-muted border-b border-border">
-                          {['Bulan', 'Tahun', 'CH (mm)', 'Suhu (\u00b0C)', 'Kelembaban (%)', 'Air Tanah (mm/hr)'].map(h => (
+                          {['Bulan', 'Tahun', 'CH (mm)', 'Suhu (\u00b0C)', 'Kelembaban (%)', 'Air Tanah (%)'].map(h => (
                             <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-muted-foreground">{h}</th>
                           ))}
                         </tr>
@@ -635,9 +670,11 @@ interface FormFieldProps {
   value: number
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   hint?: string
+  min?: number
+  max?: number
 }
 
-function FormField({ name, label, unit, value, onChange, hint }: FormFieldProps) {
+function FormField({ name, label, unit, value, onChange, hint, min = 0, max }: FormFieldProps) {
   return (
     <div className="space-y-1.5">
       <label htmlFor={name} className="text-sm font-medium">
@@ -652,10 +689,14 @@ function FormField({ name, label, unit, value, onChange, hint }: FormFieldProps)
         onChange={onChange}
         placeholder={hint}
         step="0.01"
-        min="0"
+        min={min}
+        max={max}
         required
         className="w-full h-10 rounded-lg border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-agri-green focus-visible:ring-2 focus-visible:ring-agri-green/20 placeholder:text-muted-foreground"
       />
+      {max !== undefined && (
+        <p className="text-[10px] text-muted-foreground">Rentang: {min}–{max} {unit}</p>
+      )}
     </div>
   )
 }

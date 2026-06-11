@@ -62,78 +62,6 @@ export function useClimateData(tahun?: number) {
   return { data, loading, error }
 }
 
-// Ambil data bulan ini
-export function useCurrentMonthClimate() {
-  const [data, setData] = useState<ClimateData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [isFallback, setIsFallback] = useState(false) // true jika data bukan bulan berjalan
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function fetchData() {
-      const now = new Date()
-      const bulan = now.getMonth() + 1
-      const tahun = now.getFullYear()
-
-      try {
-        // Coba bulan ini dulu
-        const { data: exact } = await supabase
-          .from('climate_data')
-          .select('*')
-          .eq('bulan', bulan)
-          .eq('tahun', tahun)
-          .single()
-
-        if (cancelled) return
-
-        if (exact) {
-          setData(exact as ClimateData)
-          setIsFallback(false)
-          setLoading(false)
-          return
-        }
-
-        // Fallback: data terbaru yang tersedia
-        const { data: latest, error: err } = await supabase
-          .from('climate_data')
-          .select('*')
-          .order('tahun', { ascending: false })
-          .order('bulan', { ascending: false })
-          .limit(1)
-          .single()
-
-        if (cancelled) return
-
-        if (err) {
-          // PGRST116 = no rows found, bukan error sebenarnya
-          if (err.code !== 'PGRST116') {
-            setError(err.message)
-          }
-          setData(null)
-          setIsFallback(false)
-        } else {
-          setData(latest as ClimateData ?? null)
-          setIsFallback(true) // data ini fallback, bukan bulan berjalan
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setError('Gagal memuat data iklim. Periksa koneksi internet.')
-        }
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-
-    fetchData()
-
-    return () => { cancelled = true }
-  }, [])
-
-  return { data, loading, error, isFallback }
-}
-
 // Deteksi musim berdasarkan curah hujan
 export function detectSeason(ch_mm: number): 'hujan' | 'kemarau' | 'pancaroba' {
   if (ch_mm >= 200) return 'hujan'
@@ -141,19 +69,23 @@ export function detectSeason(ch_mm: number): 'hujan' | 'kemarau' | 'pancaroba' {
   return 'pancaroba'
 }
 
-// Ambil daftar tahun yang ada di database
+// Ambil daftar tahun yang ada di database (distinct di server)
 export function useAvailableYears() {
   const [years, setYears] = useState<number[]>([])
 
   useEffect(() => {
     let cancelled = false
 
+    // Gunakan select dengan kolom tunggal agar Supabase bisa di-deduplicate,
+    // lalu deduplicate di client karena Supabase JS tidak expose DISTINCT secara langsung.
+    // Namun kita batasi jumlah row yang ditarik dengan hanya memilih kolom tahun.
     supabase
       .from('climate_data')
       .select('tahun')
       .order('tahun', { ascending: false })
       .then(({ data }) => {
         if (cancelled) return
+        // Deduplicate di client — payload tetap kecil karena hanya kolom tahun yang ditarik
         const unique = [...new Set((data ?? []).map((r: { tahun: number }) => r.tahun))]
         setYears(unique)
       })

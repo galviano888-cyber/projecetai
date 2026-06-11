@@ -6,10 +6,11 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { ClimateCharts } from "@/components/ClimateCharts"
-import { PlantingCalendar } from "@/components/PlantingCalendar"
+import { KalenderTanamView } from "@/components/KalenderTanamView"
 import { SeasonIndicator } from "@/components/SeasonIndicator"
 import { RecommendationCard } from "@/components/RecommendationCard"
-import { useClimateData, useCurrentMonthClimate, useAvailableYears } from "@/hooks/useClimateData"
+import { useClimateData, useAvailableYears } from "@/hooks/useClimateData"
+import { useCurrentClimate } from "@/contexts/ClimateContext"
 
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -32,7 +33,7 @@ export default function LandingPage() {
   // Dashboard data
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
   const { data: climateData, loading: climateLoading, error: climateError } = useClimateData(selectedYear)
-  const { data: currentClimate, error: currentClimateError, isFallback: climateFallback } = useCurrentMonthClimate()
+  const { currentClimate, error: currentClimateError, isFallback: climateFallback } = useCurrentClimate()
   const availableYears = useAvailableYears()
 
   // Memoize stat cards agar tidak dihitung ulang setiap render
@@ -42,33 +43,48 @@ export default function LandingPage() {
       { label: 'Curah Hujan', value: `${currentClimate.ch_mm}`, unit: 'mm', icon: CloudRain, color: 'text-agri-blue', bg: 'bg-agri-blue/10' },
       { label: 'Suhu', value: `${currentClimate.suhu}`, unit: '\u00b0C', icon: TrendingUp, color: 'text-orange-500', bg: 'bg-orange-500/10' },
       { label: 'Kelembaban', value: `${currentClimate.kelembaban}`, unit: '%', icon: Droplets, color: 'text-agri-green', bg: 'bg-agri-green/10' },
-      { label: 'Air Tanah', value: `${currentClimate.air_tanah}`, unit: 'mm/hr', icon: BarChart2, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+      { label: 'Air Tanah', value: `${currentClimate.air_tanah}`, unit: '%', icon: BarChart2, color: 'text-purple-500', bg: 'bg-purple-500/10' },
     ]
   }, [currentClimate])
 
   return (
     <div className="min-h-screen bg-background font-sans">
+      {/* Top utility bar - kesan resmi institusi */}
+      <div className="hidden md:block bg-agri-green-dark text-white/80 text-xs">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between h-9">
+          <div className="flex items-center gap-2">
+            <span className="size-1.5 rounded-full bg-agri-yellow" />
+            <span className="tracking-wide">Sekolah Tinggi Meteorologi Klimatologi dan Geofisika &middot; Kabupaten Demak</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <span>Sistem Pakar Kalender Tanam</span>
+            <span className="text-white/40">|</span>
+            <span className="text-agri-yellow font-medium">Berbasis Prediksi Iklim BMKG</span>
+          </div>
+        </div>
+      </div>
+
       {/* Navbar */}
       <header
-        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
-          scrolled ? "bg-white/95 backdrop-blur-md shadow-md" : "bg-transparent"
+        className={`sticky top-0 inset-x-0 z-50 transition-all duration-300 ${
+          scrolled ? "glass shadow-soft border-b border-border/60" : "bg-transparent"
         }`}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            <a href="#beranda" className="flex items-center gap-4 group">
-              <div className="flex items-center gap-3 pr-4 border-r border-white/20">
+            <a href="#beranda" className="flex items-center gap-3 group">
+              <div className="flex size-11 items-center justify-center rounded-xl bg-white shadow-soft ring-1 ring-border/60 overflow-hidden">
                 <img
                   src="/logo-stmkg.png"
-                  alt="STMKG Logo"
-                  className="h-10 w-auto object-contain"
+                  alt="STMKG"
+                  className="h-8 w-auto object-contain"
                 />
               </div>
               <div className="leading-tight">
-                <h1 className={`text-base font-bold tracking-tight transition-colors ${scrolled ? "text-agri-green-dark" : "text-white"}`}>
+                <h1 className={`text-base font-extrabold tracking-tight transition-colors ${scrolled ? "text-agri-green-dark" : "text-white"}`}>
                   Agro<span className="text-agri-yellow">Demak</span>
                 </h1>
-                <p className={`text-[10px] font-medium uppercase tracking-widest ${scrolled ? "text-muted-foreground" : "text-white/70"}`}>
+                <p className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${scrolled ? "text-muted-foreground" : "text-white/70"}`}>
                   Sistem Pakar Pertanian
                 </p>
               </div>
@@ -76,9 +92,9 @@ export default function LandingPage() {
 
             <nav className="hidden md:flex items-center gap-1">
               {navLinks.map((link) => {
-                const cls = `px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                const cls = `px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   scrolled
-                    ? "text-foreground hover:bg-agri-green-light hover:text-agri-green-dark"
+                    ? "text-foreground/80 hover:bg-agri-green-light hover:text-agri-green-dark"
                     : "text-white/90 hover:text-white hover:bg-white/10"
                 }`
                 return link.href.startsWith('/') ? (
@@ -87,11 +103,20 @@ export default function LandingPage() {
                   <a key={link.label} href={link.href} className={cls}>{link.label}</a>
                 )
               })}
-
+              <a
+                href="#dashboard"
+                className={`ml-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  scrolled
+                    ? "bg-agri-green text-white hover:bg-agri-green-dark shadow-soft"
+                    : "bg-agri-yellow text-amber-900 hover:bg-amber-300"
+                }`}
+              >
+                Buka Dashboard
+              </a>
             </nav>
 
             <button
-              className={`md:hidden p-2 rounded-md ${scrolled ? "text-foreground" : "text-white"}`}
+              className={`md:hidden p-2 rounded-lg ${scrolled ? "text-foreground hover:bg-muted" : "text-white hover:bg-white/10"}`}
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="Toggle menu"
             >
@@ -101,7 +126,7 @@ export default function LandingPage() {
         </div>
 
         {menuOpen && (
-          <div className="md:hidden bg-white border-b border-border shadow-lg px-4 pb-4">
+          <div className="md:hidden glass border-b border-border shadow-soft px-4 pb-4 pt-2">
             {navLinks.map((link) => {
               const cls = "block py-2.5 text-sm font-medium text-foreground hover:text-agri-green border-b border-border/50 last:border-0"
               return link.href.startsWith('/') ? (
@@ -110,7 +135,6 @@ export default function LandingPage() {
                 <a key={link.label} href={link.href} onClick={() => setMenuOpen(false)} className={cls}>{link.label}</a>
               )
             })}
-
           </div>
         )}
       </header>
@@ -118,41 +142,44 @@ export default function LandingPage() {
       {/* Hero */}
       <section
         id="beranda"
-        className="relative min-h-screen flex items-center justify-center overflow-hidden"
+        className="relative flex items-center justify-center overflow-hidden -mt-16 min-h-[calc(100vh-0px)]"
         style={{
           backgroundImage: "url(/hero-rice-field.webp)",
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-agri-green-dark/85 via-agri-green/70 to-black/60" />
-        <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 text-center pt-20">
-          <div className="mb-8 inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-black/30 px-5 py-2 backdrop-blur-md">
+        <div className="absolute inset-0 bg-gradient-to-br from-agri-green-dark/92 via-agri-green-dark/75 to-black/70" />
+        <div className="absolute inset-0 bg-grid opacity-30" />
+        {/* Glow accents */}
+        <div className="absolute -top-20 -left-20 size-96 rounded-full bg-agri-green/30 blur-[120px]" />
+        <div className="absolute bottom-0 right-0 size-96 rounded-full bg-agri-blue/20 blur-[120px]" />
+
+        <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 text-center pt-28 pb-20">
+          <div className="mb-7 inline-flex items-center gap-2.5 rounded-full border border-white/15 glass-dark px-5 py-2 animate-fade-up">
             <div className="relative flex size-2 items-center justify-center">
               <span className="absolute size-full rounded-full bg-agri-yellow animate-ping opacity-75" />
               <span className="relative size-1.5 rounded-full bg-agri-yellow" />
             </div>
-            <span className="text-[10px] font-bold text-white/90 uppercase tracking-[0.2em] leading-none">
+            <span className="text-[10px] font-bold text-white/90 uppercase tracking-[0.22em] leading-none">
               Monitoring Iklim Wilayah Demak
             </span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight text-balance mb-6">
-            Optimalkan Hasil Tanam <br />
-            <span className="text-agri-yellow">Berdasarkan Iklim</span>{" "}
-            Demak.
+          <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold text-white leading-[1.08] tracking-tight text-balance mb-6 animate-fade-up" style={{ animationDelay: '60ms' }}>
+            Tentukan Waktu Tanam Terbaik <br className="hidden sm:block" />
+            <span className="text-agri-yellow">Berdasarkan Iklim</span> Demak
           </h1>
 
-          <p className="mx-auto max-w-2xl text-lg sm:text-xl text-white/80 leading-relaxed mb-10 text-balance">
-            Sistem cerdas penentu komoditas unggulan Demak:{" "}
-            <span className="font-semibold text-white">Padi, Bawang Merah, Jambu Air, hingga Tembakau</span>{" "}
-            berdasarkan analisis klimatologi dan prediksi iklim terkini.
+          <p className="mx-auto max-w-2xl text-lg text-white/80 leading-relaxed mb-9 text-balance animate-fade-up" style={{ animationDelay: '120ms' }}>
+            Sistem pakar kalender tanam berbasis prediksi iklim BMKG untuk komoditas unggulan
+            Demak — padi, jagung, kedelai, bawang merah, hingga hortikultura.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center animate-fade-up" style={{ animationDelay: '180ms' }}>
             <Button
               size="lg"
-              className="bg-agri-yellow hover:bg-amber-400 text-amber-900 font-bold px-8 py-6 text-base shadow-xl hover:shadow-2xl transition-all hover:-translate-y-0.5"
+              className="bg-agri-yellow hover:bg-amber-300 text-amber-900 font-bold px-8 py-6 text-base shadow-soft-lg transition-all hover:-translate-y-0.5"
               onClick={() => document.getElementById("dashboard")?.scrollIntoView({ behavior: "smooth" })}
             >
               Lihat Dashboard
@@ -161,44 +188,45 @@ export default function LandingPage() {
             <Button
               size="lg"
               variant="outline"
-              className="border-white/50 text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm px-8 py-6 text-base"
+              className="border-white/40 text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm px-8 py-6 text-base"
               onClick={() => document.getElementById("edukasi")?.scrollIntoView({ behavior: "smooth" })}
             >
               Pelajari Cara Kerja
             </Button>
           </div>
 
-          <div className="mt-16 grid grid-cols-3 gap-4 max-w-xl mx-auto">
+          <div className="mt-14 grid grid-cols-3 gap-3 sm:gap-4 max-w-xl mx-auto animate-fade-up" style={{ animationDelay: '240ms' }}>
             {[
-              { value: "15+", label: "Komoditas Daerah" },
-              { value: "BETA", label: "Tahap Uji Coba" },
-              { value: "SISTEM", label: "Analisis Cerdas" },
+              { value: "10", label: "Komoditas Unggulan" },
+              { value: "BMKG", label: "Sumber Data Iklim" },
+              { value: "CF", label: "Metode Sistem Pakar" },
             ].map((stat) => (
-              <div key={stat.label} className="group relative rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-4 transition-all hover:bg-white/15 hover:border-white/30">
-                <p className="text-3xl font-extrabold text-white group-hover:scale-110 transition-transform">{stat.value}</p>
-                <p className="text-[10px] text-white/60 uppercase tracking-widest mt-1 font-bold">{stat.label}</p>
+              <div key={stat.label} className="group relative rounded-2xl glass-dark border border-white/15 p-4 transition-all hover:border-white/30 hover:-translate-y-0.5">
+                <p className="text-2xl sm:text-3xl font-extrabold text-white group-hover:scale-105 transition-transform">{stat.value}</p>
+                <p className="text-[10px] text-white/60 uppercase tracking-[0.15em] mt-1 font-bold">{stat.label}</p>
               </div>
             ))}
           </div>
         </div>
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-          <ChevronDown className="size-6 text-white/60" />
+          <ChevronDown className="size-6 text-white/50" />
         </div>
       </section>
 
       {/* ─── Dashboard Section ─── */}
-      <section id="dashboard" className="py-16 bg-background">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section id="dashboard" className="py-20 bg-background relative">
+        <div className="absolute inset-0 bg-grid opacity-40 pointer-events-none" />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Section header */}
-          <div className="text-center mb-10">
-            <Badge className="mb-3 bg-agri-green/10 text-agri-green-dark border-agri-green/20">
-              Data Real-time
+          <div className="text-center mb-12">
+            <Badge className="mb-3 bg-agri-green/10 text-agri-green-dark border-agri-green/20 hover:bg-agri-green/10">
+              Data Iklim Terkini
             </Badge>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground mb-3">
-              Dashboard Iklim Demak
+              Dashboard Iklim <span className="text-gradient-green">Kabupaten Demak</span>
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Data iklim bulanan Kabupaten Demak berdasarkan pencatatan historis BMKG.
+              Data iklim bulanan Kabupaten Demak berdasarkan pencatatan dan prediksi BMKG.
             </p>
           </div>
 
@@ -237,12 +265,12 @@ export default function LandingPage() {
           {currentClimate && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
               {currentClimateStats.map((stat) => (
-                <div key={stat.label} className="rounded-2xl border border-border bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
-                  <div className={`size-8 rounded-xl ${stat.bg} flex items-center justify-center mb-3`}>
-                    <stat.icon className={`size-4 ${stat.color}`} />
+                <div key={stat.label} className="rounded-2xl border border-border bg-card p-5 shadow-soft hover:shadow-soft-lg transition-all hover:-translate-y-0.5">
+                  <div className={`size-10 rounded-xl ${stat.bg} flex items-center justify-center mb-3`}>
+                    <stat.icon className={`size-5 ${stat.color}`} />
                   </div>
-                  <p className="text-xs text-muted-foreground">{stat.label}</p>
-                  <p className="text-xl font-bold text-foreground mt-0.5">
+                  <p className="text-xs text-muted-foreground font-medium">{stat.label}</p>
+                  <p className="text-2xl font-extrabold text-foreground mt-0.5 tracking-tight">
                     {stat.value} <span className="text-xs font-normal text-muted-foreground">{stat.unit}</span>
                   </p>
                 </div>
@@ -301,7 +329,7 @@ export default function LandingPage() {
                 Dihitung otomatis menggunakan sistem pakar rule-based berbasis data iklim terkini.
                 Metode: Forward Chaining + Weighted Certainty Factor.
               </p>
-              <RecommendationCard climate={currentClimate} topN={3} />
+              <RecommendationCard bulan={currentClimate.bulan} tahun={selectedYear} topN={3} />
             </div>
           )}
 
@@ -311,17 +339,7 @@ export default function LandingPage() {
               <CalendarDays className="size-4 text-agri-green" />
               <h3 className="text-base font-semibold text-foreground">Kalender Tanam Komoditas</h3>
             </div>
-            <PlantingCalendar
-              currentClimate={currentClimate ? {
-                ch_mm: currentClimate.ch_mm,
-                suhu: currentClimate.suhu,
-                kelembaban: currentClimate.kelembaban,
-                air_tanah: currentClimate.air_tanah,
-                bulan: currentClimate.bulan,
-                tahun: currentClimate.tahun,
-              } : null}
-              allClimateData={climateData}
-            />
+            <KalenderTanamView defaultYear={selectedYear} />
           </div>
         </div>
       </section>
@@ -378,13 +396,13 @@ export default function LandingPage() {
       </section>
 
       {/* Educational */}
-      <section id="edukasi" className="py-20 bg-background">
+      <section id="edukasi" className="py-20 bg-secondary/40 relative">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
             <Badge className="mb-3 bg-agri-blue/10 text-agri-blue border-agri-blue/20 hover:bg-agri-blue/10">Transparansi Sistem</Badge>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground mb-3">Bagaimana Sistem Ini Bekerja?</h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Data iklim dari admin diproses otomatis oleh sistem pakar untuk menghasilkan rekomendasi komoditas yang akurat setiap bulannya.
+              Data prediksi iklim BMKG diproses sistem pakar untuk menghasilkan kalender tanam dan rekomendasi komoditas tiap bulan.
             </p>
           </div>
           <div className="grid gap-8 md:grid-cols-3">
@@ -392,9 +410,9 @@ export default function LandingPage() {
               {
                 step: "01",
                 icon: CloudRain,
-                title: "Data Iklim Masuk",
+                title: "Data Prediksi Iklim",
                 subtitle: "Input oleh Admin",
-                description: "Admin memasukkan data iklim bulanan Kabupaten Demak — curah hujan, suhu, kelembaban, dan ketersediaan air tanah — berdasarkan data resmi BMKG dan Stasiun Klimatologi Jawa Tengah.",
+                description: "Admin memasukkan data prediksi iklim bulanan Kabupaten Demak — curah hujan, suhu, kelembaban, dan ketersediaan air tanah — berdasarkan prakiraan resmi BMKG.",
                 iconBg: "bg-agri-green/10", iconColor: "text-agri-green",
                 borderColor: "border-agri-green/30", stepBg: "bg-agri-green text-white", subtitleColor: "text-agri-green"
               },
@@ -402,17 +420,17 @@ export default function LandingPage() {
                 step: "02",
                 icon: BrainCircuit,
                 title: "Sistem Pakar Berjalan",
-                subtitle: "Forward Chaining Otomatis",
-                description: "Mesin inferensi secara otomatis mencocokkan data iklim dengan syarat tumbuh tiap komoditas menggunakan metode Forward Chaining berbasis aturan ilmiah dari BBSDLP (Ritung et al., 2011).",
+                subtitle: "Forward Chaining + Certainty Factor",
+                description: "Mesin inferensi mencocokkan prediksi iklim dengan syarat tumbuh tiap tanaman per fase (Forward Chaining), lalu menghitung derajat keyakinan dengan metode Certainty Factor (Shortliffe & Buchanan, 1975).",
                 iconBg: "bg-agri-blue/10", iconColor: "text-agri-blue",
                 borderColor: "border-agri-blue/30", stepBg: "bg-agri-blue text-white", subtitleColor: "text-agri-blue"
               },
               {
                 step: "03",
                 icon: CheckCircle2,
-                title: "Rekomendasi Tampil",
-                subtitle: "Skor & Grade Kecocokan",
-                description: "Setiap komoditas mendapat skor kecocokan 0–100% menggunakan Weighted Certainty Factor. Top 3 komoditas terbaik ditampilkan langsung di dashboard beserta alasan dan detail parameternya.",
+                title: "Kalender Tanam Tampil",
+                subtitle: "Nilai CF & Rekomendasi",
+                description: "Setiap tanaman mendapat nilai Certainty Factor 0–100% per bulan tanam. Kalender tanam dan rekomendasi komoditas terbaik tampil otomatis di dashboard beserta detail penalaran tiap fase.",
                 iconBg: "bg-agri-yellow/20", iconColor: "text-amber-700",
                 borderColor: "border-agri-yellow/40", stepBg: "bg-agri-yellow text-amber-900", subtitleColor: "text-amber-700"
               },
@@ -440,7 +458,8 @@ export default function LandingPage() {
             <div className="text-center sm:text-left">
               <p className="font-semibold text-foreground">Berbasis Referensi Ilmiah Terverifikasi</p>
               <p className="text-sm text-muted-foreground mt-0.5">
-                Parameter syarat tumbuh komoditas bersumber dari Ritung et al. (2011) BBSDLP Badan Litbang Pertanian, FAO AQUASTAT (2002), IRRI Knowledge Bank (2023), serta Balitsa dan Balitkabi.
+                Basis aturan bersumber dari Oldeman (1975) untuk klasifikasi iklim, Djaenudin et al. (2011)
+                BBSDLP untuk evaluasi lahan, dan FAO-56 (Allen et al., 1998) untuk fase tumbuh tanaman.
               </p>
             </div>
           </div>

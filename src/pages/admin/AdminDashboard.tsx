@@ -16,6 +16,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let cancelled = false
+
     async function fetchSummary() {
       const [{ data: latest }, { count }] = await Promise.all([
         supabase
@@ -29,18 +31,21 @@ export default function AdminDashboard() {
           .from('climate_data')
           .select('*', { count: 'exact', head: true }),
       ])
+      if (cancelled) return
       setLatestData(latest as ClimateData)
       setTotalData(count ?? 0)
       setLoading(false)
     }
+
     fetchSummary()
+    return () => { cancelled = true }
   }, [])
 
   const stats = latestData ? [
     { label: 'Curah Hujan', value: `${latestData.ch_mm} mm`, icon: CloudRain, color: 'text-agri-blue', bg: 'bg-agri-blue/10' },
     { label: 'Suhu', value: `${latestData.suhu} °C`, icon: Thermometer, color: 'text-orange-500', bg: 'bg-orange-500/10' },
     { label: 'Kelembaban', value: `${latestData.kelembaban} %`, icon: Droplets, color: 'text-agri-green', bg: 'bg-agri-green/10' },
-    { label: 'Air Tanah', value: `${latestData.air_tanah} mm/hr`, icon: Layers, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+    { label: 'Air Tanah', value: `${latestData.air_tanah} %`, icon: Layers, color: 'text-purple-500', bg: 'bg-purple-500/10' },
   ] : []
 
   return (

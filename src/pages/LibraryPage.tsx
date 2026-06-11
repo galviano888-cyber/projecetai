@@ -2,13 +2,14 @@ import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import type { Commodity, Library } from '@/lib/supabase'
-import { useCurrentMonthClimate } from '@/hooks/useClimateData'
-import { scoreCommodity } from '@/lib/expertSystem'
+import { useCurrentClimate } from '@/contexts/ClimateContext'
+import { useCfTanamanBatch } from '@/hooks/useKalenderTanam'
+import { LABEL_USER_TEKS, type LabelUser } from '@/lib/kalenderTanam'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
   Sprout, Search, Leaf, CloudRain, Sun, Wind,
-  ChevronRight, BookOpen, ChevronLeft
+  ChevronRight, BookOpen, ChevronLeft, ArrowLeft
 } from 'lucide-react'
 
 const PAGE_SIZE = 6
@@ -19,18 +20,10 @@ const MUSIM_CONFIG: Record<string, { label: string; icon: typeof CloudRain; colo
   sepanjang_tahun: { label: 'Sepanjang Tahun', icon: Wind,      color: 'bg-agri-green/10 text-agri-green-dark border-agri-green/20' },
 }
 
-const GRADE_BADGE: Record<string, string> = {
-  S1: 'bg-agri-green text-white',
-  S2: 'bg-agri-yellow text-amber-900',
-  S3: 'bg-orange-400 text-white',
-  N:  'bg-muted text-muted-foreground',
-}
-
-const GRADE_LABEL: Record<string, string> = {
-  S1: 'Cocok Bulan Ini',
-  S2: 'Cukup Cocok',
-  S3: 'Marjinal',
-  N:  'Kurang Cocok',
+const LABEL_BADGE: Record<LabelUser, string> = {
+  cocok: 'bg-agri-green text-white',
+  cukup: 'bg-agri-yellow text-amber-900',
+  tidak: 'bg-muted text-muted-foreground',
 }
 
 type FilterMusim = 'semua' | 'hujan' | 'kemarau' | 'sepanjang_tahun'
@@ -42,7 +35,7 @@ export default function LibraryPage() {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterMusim>('semua')
   const [page, setPage] = useState(1)
-  const { data: currentClimate } = useCurrentMonthClimate()
+  const { currentClimate } = useCurrentClimate()
 
   useEffect(() => {
     let cancelled = false
@@ -80,16 +73,12 @@ export default function LibraryPage() {
     [filtered, page]
   )
 
-  // Memoize skor kecocokan untuk semua komoditas di halaman ini
-  const gradeMap = useMemo(() => {
-    if (!currentClimate) return {} as Record<string, { grade: string; skor: number }>
-    const map: Record<string, { grade: string; skor: number }> = {}
-    filtered.forEach(c => {
-      const result = scoreCommodity(c, currentClimate)
-      map[c.id!] = { grade: result.grade, skor: result.skor_kecocokan }
-    })
-    return map
-  }, [filtered, currentClimate])
+  // Hitung CF kecocokan komoditas di halaman aktif (jika tanam bulan ini)
+  // Hanya tanaman yang ada di knowledge base (10 tanaman) yang dapat nilai.
+  const namaPaginated = useMemo(() => paginated.map(c => c.nama), [paginated])
+  const bulanSekarang = currentClimate?.bulan ?? new Date().getMonth() + 1
+  const tahunSekarang = currentClimate?.tahun ?? new Date().getFullYear()
+  const { map: cfMap } = useCfTanamanBatch(namaPaginated, bulanSekarang, tahunSekarang)
 
   const bulanIni = currentClimate
     ? new Date(0, currentClimate.bulan - 1).toLocaleString('id-ID', { month: 'long' })
@@ -99,7 +88,18 @@ export default function LibraryPage() {
     <div className="min-h-screen bg-background">
       {/* Hero */}
       <section className="bg-agri-green-dark text-white py-14 px-4">
-        <div className="mx-auto max-w-4xl text-center">
+        <div className="mx-auto max-w-4xl">
+          {/* Back to dashboard */}
+          <div className="mb-6">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 text-white/70 hover:text-white text-sm font-medium transition-colors group"
+            >
+              <ArrowLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" />
+              Kembali ke Dashboard
+            </Link>
+          </div>
+          <div className="text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest mb-4">
             <BookOpen className="size-3.5" />
             Perpustakaan Tanaman
@@ -122,6 +122,7 @@ export default function LibraryPage() {
               onChange={e => setSearch(e.target.value)}
               className="w-full h-11 rounded-xl border border-white/20 bg-white/10 pl-10 pr-4 text-sm text-white placeholder:text-white/50 outline-none focus:border-agri-yellow focus:bg-white/15 transition-all"
             />
+          </div>
           </div>
         </div>
       </section>
@@ -188,8 +189,8 @@ export default function LibraryPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {paginated.map(c => {
-                const gradeInfo = gradeMap[c.id!] ?? { grade: '', skor: 0 }
-                const { grade, skor } = gradeInfo
+                const cf = cfMap.get(c.nama.toLowerCase())
+                const label = cf?.labelUser
                 const musimCfg = MUSIM_CONFIG[c.musim ?? 'sepanjang_tahun']
                 const MIcon = musimCfg?.icon ?? Leaf
                 const hasLibrary = !!libraries[c.id!]
@@ -200,10 +201,10 @@ export default function LibraryPage() {
                       <div className="h-1 bg-gradient-to-r from-agri-green to-agri-blue" />
                       <CardContent className="p-5">
                         <div className="flex items-center gap-2 flex-wrap mb-4">
-                          {grade && grade !== '' && (
-                            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${GRADE_BADGE[grade]}`}>
-                              {grade === 'S1' && <Sprout className="size-2.5" />}
-                              {GRADE_LABEL[grade]}
+                          {label && (
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${LABEL_BADGE[label]}`}>
+                              {label === 'cocok' && <Sprout className="size-2.5" />}
+                              {LABEL_USER_TEKS[label]}
                             </span>
                           )}
                           {musimCfg && (
@@ -234,20 +235,20 @@ export default function LibraryPage() {
                           </div>
                         </div>
 
-                        {currentClimate && skor > 0 && (
+                        {cf && cf.persenKeyakinan > 0 && (
                           <div className="mb-3">
                             <div className="flex justify-between text-xs mb-1">
-                              <span className="text-muted-foreground">Kecocokan bulan ini</span>
-                              <span className="font-semibold text-foreground">{skor}%</span>
+                              <span className="text-muted-foreground">Certainty Factor (tanam bulan ini)</span>
+                              <span className="font-semibold text-foreground">{cf.persenKeyakinan}%</span>
                             </div>
                             <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                               <div
                                 className={`h-full rounded-full ${
-                                  skor >= 75 ? 'bg-agri-green' :
-                                  skor >= 50 ? 'bg-agri-yellow' :
-                                  skor >= 25 ? 'bg-orange-400' : 'bg-red-400'
+                                  cf.persenKeyakinan >= 70 ? 'bg-agri-green' :
+                                  cf.persenKeyakinan >= 40 ? 'bg-agri-yellow' :
+                                  'bg-red-400'
                                 }`}
-                                style={{ width: `${skor}%` }}
+                                style={{ width: `${cf.persenKeyakinan}%` }}
                               />
                             </div>
                           </div>

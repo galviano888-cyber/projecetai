@@ -60,6 +60,7 @@ export interface Commodity {
 export interface Recommendation {
   id?: string
   bulan: number
+  tahun: number
   commodity_id: string
   skor_kecocokan: number
   catatan?: string
@@ -76,4 +77,69 @@ export interface Library {
   cara_pencegahan?: string
   created_at?: string
   commodities?: Commodity
+}
+
+// ─── Kalender Tanam Types ────────────────────────────────────────────
+
+export interface PrediksiIklim {
+  id?: string
+  bulan: number
+  tahun: number
+  ch_mm: number
+  suhu: number
+  kelembaban: number
+  kat?: number
+  sumber?: string
+  keterangan?: string
+  created_at?: string
+}
+
+export interface ThresholdTanaman {
+  id?: string
+  nama_tanaman: string
+  total_hari: number
+  total_bulan: number
+  pola_ch: string           // "BB,BB,BB,BB,BL"
+  suhu_s1_min: number
+  suhu_s1_max: number
+  suhu_s2_min: number
+  suhu_s2_max: number
+  suhu_s3_min: number
+  suhu_s3_max: number
+  rh_s1_min: number
+  rh_s1_max: number
+  rh_s2_min: number
+  rh_s2_max: number
+  rh_s3_min: number
+  rh_s3_max: number
+  kat_s1_min: number
+  kat_s2_min: number
+  kat_s3_min: number
+  referensi?: string
+  created_at?: string
+}
+
+export interface KalenderTanam {
+  id?: string
+  tahun: number
+  bulan_tanam: number
+  nama_tanaman: string
+  kelas_akhir: 'S1' | 'S2' | 'S3' | 'N'
+  detail_per_bulan?: Array<{
+    bulan: number
+    ch_aktual: number
+    oldeman: string
+    ch_butuh: string
+    kelas: string
+  }>
+  bulan_panen?: number
+  created_at?: string
+}
+
+export interface CfRuleSetting {
+  id?: string
+  parameter: 'ch' | 'suhu' | 'rh' | 'kat'
+  cf_value: number
+  keterangan?: string
+  updated_at?: string
 }
