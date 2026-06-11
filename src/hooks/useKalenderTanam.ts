@@ -199,3 +199,67 @@ export function useCfTanamanBatch(namaList: string[], bulanTanam: number, tahunT
 
   return { map, loading }
 }
+
+// ─── Dashboard: data prediksi iklim untuk grafik & stat ────────────────────────
+
+export interface PrediksiBulan {
+  bulan: number
+  bulan_nama: string
+  ch_mm: number
+  suhu: number
+  kelembaban: number
+  air_tanah: number   // dari kolom kat (% kapasitas lapang)
+}
+
+const BULAN_SHORT = [
+  '', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+  'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'
+]
+
+/**
+ * Hook data prediksi iklim BMKG untuk dashboard user.
+ * Mengembalikan deret 12 bulan (chart-ready) + data bulan berjalan.
+ * Sumber: tabel prediksi_iklim (yang diisi admin di menu Prediksi BMKG).
+ */
+export function usePrediksiIklim(tahun: number) {
+  const [data, setData] = useState<PrediksiBulan[]>([])
+  const [current, setCurrent] = useState<PrediksiBulan | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    async function run() {
+      setLoading(true)
+      const { data: rows } = await supabase
+        .from('prediksi_iklim')
+        .select('*')
+        .eq('tahun', tahun)
+        .order('bulan', { ascending: true })
+
+      if (cancelled) return
+
+      const mapped: PrediksiBulan[] = (rows ?? []).map((d: {
+        bulan: number; ch_mm: number; suhu: number; kelembaban: number; kat?: number | null
+      }) => ({
+        bulan: d.bulan,
+        bulan_nama: BULAN_SHORT[d.bulan] ?? `Bln ${d.bulan}`,
+        ch_mm: d.ch_mm,
+        suhu: d.suhu,
+        kelembaban: d.kelembaban,
+        air_tanah: d.kat ?? 0,
+      }))
+
+      setData(mapped)
+
+      // Bulan berjalan, fallback ke data terakhir yang tersedia
+      const bulanIni = new Date().getMonth() + 1
+      const exact = mapped.find(m => m.bulan === bulanIni)
+      setCurrent(exact ?? mapped[mapped.length - 1] ?? null)
+      setLoading(false)
+    }
+    run()
+    return () => { cancelled = true }
+  }, [tahun])
+
+  return { data, current, loading }
+}

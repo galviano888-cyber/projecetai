@@ -10,11 +10,20 @@ import {
   Bar,
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import type { ClimateDataWithMonth } from '@/hooks/useClimateData'
 import { CloudRain, Thermometer, Droplets, Layers } from 'lucide-react'
 
+// Bentuk minimal data yang dibutuhkan grafik — kompatibel dengan
+// ClimateDataWithMonth (historis) maupun PrediksiBulan (prediksi BMKG).
+export interface ChartClimatePoint {
+  bulan_nama: string
+  ch_mm: number
+  suhu: number
+  kelembaban: number
+  air_tanah: number
+}
+
 interface ClimateChartsProps {
-  data: ClimateDataWithMonth[]
+  data: ChartClimatePoint[]
 }
 
 // Custom Tooltip

@@ -11,6 +11,7 @@ import { SeasonIndicator } from "@/components/SeasonIndicator"
 import { RecommendationCard } from "@/components/RecommendationCard"
 import { useClimateData, useAvailableYears } from "@/hooks/useClimateData"
 import { useCurrentClimate } from "@/contexts/ClimateContext"
+import { usePrediksiIklim } from "@/hooks/useKalenderTanam"
 
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -33,19 +34,26 @@ export default function LandingPage() {
   // Dashboard data
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
   const { data: climateData, loading: climateLoading, error: climateError } = useClimateData(selectedYear)
-  const { currentClimate, error: currentClimateError, isFallback: climateFallback } = useCurrentClimate()
+  const { currentClimate, error: currentClimateError } = useCurrentClimate()
   const availableYears = useAvailableYears()
+
+  // Data prediksi BMKG (sumber utama dashboard & rekomendasi)
+  const { data: prediksiData, current: prediksiCurrent } = usePrediksiIklim(selectedYear)
+
+  // Pakai prediksi sebagai sumber utama; fallback ke climate_data historis bila kosong
+  const dashboardClimate = prediksiCurrent ?? currentClimate
+  const chartData = prediksiData.length > 0 ? prediksiData : climateData
 
   // Memoize stat cards agar tidak dihitung ulang setiap render
   const currentClimateStats = useMemo(() => {
-    if (!currentClimate) return []
+    if (!dashboardClimate) return []
     return [
-      { label: 'Curah Hujan', value: `${currentClimate.ch_mm}`, unit: 'mm', icon: CloudRain, color: 'text-agri-blue', bg: 'bg-agri-blue/10' },
-      { label: 'Suhu', value: `${currentClimate.suhu}`, unit: '\u00b0C', icon: TrendingUp, color: 'text-orange-500', bg: 'bg-orange-500/10' },
-      { label: 'Kelembaban', value: `${currentClimate.kelembaban}`, unit: '%', icon: Droplets, color: 'text-agri-green', bg: 'bg-agri-green/10' },
-      { label: 'Air Tanah', value: `${currentClimate.air_tanah}`, unit: '%', icon: BarChart2, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+      { label: 'Curah Hujan', value: `${dashboardClimate.ch_mm}`, unit: 'mm', icon: CloudRain, color: 'text-agri-blue', bg: 'bg-agri-blue/10' },
+      { label: 'Suhu', value: `${dashboardClimate.suhu}`, unit: '\u00b0C', icon: TrendingUp, color: 'text-orange-500', bg: 'bg-orange-500/10' },
+      { label: 'Kelembaban', value: `${dashboardClimate.kelembaban}`, unit: '%', icon: Droplets, color: 'text-agri-green', bg: 'bg-agri-green/10' },
+      { label: 'Air Tanah', value: `${dashboardClimate.air_tanah}`, unit: '%', icon: BarChart2, color: 'text-purple-500', bg: 'bg-purple-500/10' },
     ]
-  }, [currentClimate])
+  }, [dashboardClimate])
 
   return (
     <div className="min-h-screen bg-background font-sans">
@@ -232,11 +240,11 @@ export default function LandingPage() {
 
           {/* Season indicator + year selector */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-            {currentClimate ? (
+            {dashboardClimate ? (
               <SeasonIndicator
-                ch_mm={currentClimate.ch_mm}
-                bulan={currentClimate.bulan}
-                tahun={currentClimate.tahun}
+                ch_mm={dashboardClimate.ch_mm}
+                bulan={prediksiCurrent?.bulan ?? currentClimate?.bulan}
+                tahun={selectedYear}
               />
             ) : (
               <div className="h-14 w-64 rounded-2xl bg-muted animate-pulse" />
@@ -262,7 +270,7 @@ export default function LandingPage() {
           </div>
 
           {/* Stats summary cards */}
-          {currentClimate && (
+          {dashboardClimate && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
               {currentClimateStats.map((stat) => (
                 <div key={stat.label} className="rounded-2xl border border-border bg-card p-5 shadow-soft hover:shadow-soft-lg transition-all hover:-translate-y-0.5">
@@ -287,20 +295,20 @@ export default function LandingPage() {
           )}
 
           {/* Error state iklim bulan ini */}
-          {currentClimateError && !currentClimate && (
+          {!dashboardClimate && currentClimateError && (
             <div className="mb-4 flex items-center gap-2 rounded-xl border border-amber-300 bg-agri-yellow/10 px-4 py-3 text-sm text-amber-800">
               <AlertTriangle className="size-4 shrink-0" />
-              <span>Data iklim bulan ini tidak tersedia. Rekomendasi dan indikator musim tidak dapat ditampilkan.</span>
+              <span>Data prediksi iklim belum tersedia. Admin perlu mengisi data di menu Prediksi BMKG terlebih dahulu.</span>
             </div>
           )}
 
-          {/* Fallback notice jika data bukan bulan berjalan */}
-          {climateFallback && currentClimate && (
-            <div className="mb-4 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          {/* Info bila dashboard pakai data prediksi (bukan bulan berjalan) */}
+          {prediksiCurrent && prediksiCurrent.bulan !== (new Date().getMonth() + 1) && (
+            <div className="mb-4 flex items-center gap-2 rounded-xl border border-agri-blue/20 bg-agri-blue/5 px-4 py-3 text-sm text-agri-blue">
               <AlertTriangle className="size-4 shrink-0" />
               <span>
-                Data iklim bulan ini belum tersedia. Rekomendasi dan grafik menggunakan data terakhir:
-                <strong> {new Date(0, (currentClimate.bulan ?? 1) - 1).toLocaleString('id-ID', { month: 'long' })} {currentClimate.tahun}</strong>.
+                Menampilkan data prediksi bulan terakhir yang tersedia:
+                <strong> {new Date(0, prediksiCurrent.bulan - 1).toLocaleString('id-ID', { month: 'long' })} {selectedYear}</strong>.
               </span>
             </div>
           )}
@@ -312,26 +320,24 @@ export default function LandingPage() {
               <h3 className="text-base font-semibold text-foreground">Grafik Iklim Bulanan</h3>
               {climateLoading && <span className="text-xs text-muted-foreground animate-pulse">Memuat data...</span>}
             </div>
-            <ClimateCharts data={climateData} />
+            <ClimateCharts data={chartData} />
           </div>
 
           {/* Rekomendasi Sistem Pakar */}
-          {currentClimate && (
-            <div className="mb-8">
-              <div className="flex items-center gap-2 mb-2">
-                <Sprout className="size-4 text-agri-green" />
-                <h3 className="text-base font-semibold text-foreground">Rekomendasi Komoditas Bulan Ini</h3>
-                <Badge className="text-xs bg-agri-green/10 text-agri-green-dark border-agri-green/20">
-                  Top 3
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground mb-4">
-                Dihitung otomatis menggunakan sistem pakar rule-based berbasis data iklim terkini.
-                Metode: Forward Chaining + Weighted Certainty Factor.
-              </p>
-              <RecommendationCard bulan={currentClimate.bulan} tahun={selectedYear} topN={3} />
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-2">
+              <Sprout className="size-4 text-agri-green" />
+              <h3 className="text-base font-semibold text-foreground">Rekomendasi Komoditas Bulan Ini</h3>
+              <Badge className="text-xs bg-agri-green/10 text-agri-green-dark border-agri-green/20">
+                Top 3
+              </Badge>
             </div>
-          )}
+            <p className="text-xs text-muted-foreground mb-4">
+              Dihitung otomatis menggunakan sistem pakar berbasis prediksi iklim BMKG.
+              Metode: Forward Chaining + Certainty Factor.
+            </p>
+            <RecommendationCard bulan={new Date().getMonth() + 1} tahun={selectedYear} topN={3} />
+          </div>
 
           {/* Planting Calendar */}
           <div>
