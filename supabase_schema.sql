@@ -70,24 +70,40 @@ ALTER TABLE recommendations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE library         ENABLE ROW LEVEL SECURITY;
 
 -- Public READ untuk semua tabel (user biasa bisa lihat)
+DROP POLICY IF EXISTS "public_read_climate"      ON climate_data;
+DROP POLICY IF EXISTS "public_read_commodities"  ON commodities;
+DROP POLICY IF EXISTS "public_read_recommendations" ON recommendations;
+DROP POLICY IF EXISTS "public_read_library"      ON library;
 CREATE POLICY "public_read_climate"    ON climate_data    FOR SELECT USING (true);
 CREATE POLICY "public_read_commodities" ON commodities    FOR SELECT USING (true);
 CREATE POLICY "public_read_recommendations" ON recommendations FOR SELECT USING (true);
 CREATE POLICY "public_read_library"    ON library         FOR SELECT USING (true);
 
 -- Admin WRITE hanya untuk authenticated users
+DROP POLICY IF EXISTS "admin_insert_climate" ON climate_data;
+DROP POLICY IF EXISTS "admin_update_climate" ON climate_data;
+DROP POLICY IF EXISTS "admin_delete_climate" ON climate_data;
 CREATE POLICY "admin_insert_climate"   ON climate_data    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "admin_update_climate"   ON climate_data    FOR UPDATE USING (auth.role() = 'authenticated');
 CREATE POLICY "admin_delete_climate"   ON climate_data    FOR DELETE USING (auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "admin_insert_commodities" ON commodities;
+DROP POLICY IF EXISTS "admin_update_commodities" ON commodities;
+DROP POLICY IF EXISTS "admin_delete_commodities" ON commodities;
 CREATE POLICY "admin_insert_commodities" ON commodities   FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "admin_update_commodities" ON commodities   FOR UPDATE USING (auth.role() = 'authenticated');
 CREATE POLICY "admin_delete_commodities" ON commodities   FOR DELETE USING (auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "admin_insert_recommendations" ON recommendations;
+DROP POLICY IF EXISTS "admin_update_recommendations" ON recommendations;
+DROP POLICY IF EXISTS "admin_delete_recommendations" ON recommendations;
 CREATE POLICY "admin_insert_recommendations" ON recommendations FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "admin_update_recommendations" ON recommendations FOR UPDATE USING (auth.role() = 'authenticated');
 CREATE POLICY "admin_delete_recommendations" ON recommendations FOR DELETE USING (auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "admin_insert_library" ON library;
+DROP POLICY IF EXISTS "admin_update_library" ON library;
+DROP POLICY IF EXISTS "admin_delete_library" ON library;
 CREATE POLICY "admin_insert_library"   ON library         FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "admin_update_library"   ON library         FOR UPDATE USING (auth.role() = 'authenticated');
 CREATE POLICY "admin_delete_library"   ON library         FOR DELETE USING (auth.role() = 'authenticated');
