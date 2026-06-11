@@ -32,6 +32,10 @@ async function fetchCfRule(): Promise<CfRule> {
 /**
  * Ambil data prediksi iklim BMKG untuk tahun + tahun depan
  * (masa tumbuh bisa menyeberang tahun).
+ *
+ * Sumber utama: tabel prediksi_iklim (menu admin "Prediksi BMKG").
+ * Fallback   : tabel climate_data (menu admin "Data Iklim") bila
+ *              prediksi_iklim kosong, agar data tetap terpakai.
  */
 async function fetchIklim(tahun: number): Promise<IklimBulan[]> {
   const { data, error } = await supabase
@@ -40,18 +44,39 @@ async function fetchIklim(tahun: number): Promise<IklimBulan[]> {
     .in('tahun', [tahun, tahun + 1])
     .order('bulan', { ascending: true })
 
-  if (error || !data) return []
+  if (!error && data && data.length > 0) {
+    return data.map((d: {
+      bulan: number; tahun: number; ch_mm: number
+      suhu: number; kelembaban: number; kat?: number | null
+    }) => ({
+      bulan: d.bulan,
+      tahun: d.tahun,
+      ch_mm: d.ch_mm,
+      suhu: d.suhu,
+      kelembaban: d.kelembaban,
+      kat: d.kat ?? undefined,
+    }))
+  }
 
-  return data.map((d: {
+  // Fallback: climate_data (kolom air_tanah dipakai sebagai KAT)
+  const { data: cd, error: cdErr } = await supabase
+    .from('climate_data')
+    .select('*')
+    .in('tahun', [tahun, tahun + 1])
+    .order('bulan', { ascending: true })
+
+  if (cdErr || !cd) return []
+
+  return cd.map((d: {
     bulan: number; tahun: number; ch_mm: number
-    suhu: number; kelembaban: number; kat?: number | null
+    suhu: number; kelembaban: number; air_tanah?: number | null
   }) => ({
     bulan: d.bulan,
     tahun: d.tahun,
     ch_mm: d.ch_mm,
     suhu: d.suhu,
     kelembaban: d.kelembaban,
-    kat: d.kat ?? undefined,
+    kat: d.air_tanah ?? undefined,
   }))
 }
 
@@ -128,15 +153,20 @@ export function useTahunPrediksi() {
 
   useEffect(() => {
     let cancelled = false
-    supabase
-      .from('prediksi_iklim')
-      .select('tahun')
-      .order('tahun', { ascending: false })
-      .then(({ data }) => {
-        if (cancelled) return
-        const unique = [...new Set((data ?? []).map((r: { tahun: number }) => r.tahun))]
-        setYears(unique)
-      })
+    async function run() {
+      const [{ data: pred }, { data: cd }] = await Promise.all([
+        supabase.from('prediksi_iklim').select('tahun'),
+        supabase.from('climate_data').select('tahun'),
+      ])
+      if (cancelled) return
+      const all = [
+        ...((pred ?? []) as { tahun: number }[]),
+        ...((cd ?? []) as { tahun: number }[]),
+      ].map(r => r.tahun)
+      const unique = [...new Set(all)].sort((a, b) => b - a)
+      setYears(unique)
+    }
+    run()
     return () => { cancelled = true }
   }, [])
 
@@ -230,17 +260,35 @@ export function usePrediksiIklim(tahun: number) {
     let cancelled = false
     async function run() {
       setLoading(true)
-      const { data: rows } = await supabase
+      // Sumber utama: prediksi_iklim
+      let rows: any[] = []
+      const { data: pred } = await supabase
         .from('prediksi_iklim')
         .select('*')
         .eq('tahun', tahun)
         .order('bulan', { ascending: true })
 
+      if (pred && pred.length > 0) {
+        rows = pred.map((d: any) => ({
+          bulan: d.bulan, ch_mm: d.ch_mm, suhu: d.suhu,
+          kelembaban: d.kelembaban, kat: d.kat,
+        }))
+      } else {
+        // Fallback: climate_data (air_tanah -> kat)
+        const { data: cd } = await supabase
+          .from('climate_data')
+          .select('*')
+          .eq('tahun', tahun)
+          .order('bulan', { ascending: true })
+        rows = (cd ?? []).map((d: any) => ({
+          bulan: d.bulan, ch_mm: d.ch_mm, suhu: d.suhu,
+          kelembaban: d.kelembaban, kat: d.air_tanah,
+        }))
+      }
+
       if (cancelled) return
 
-      const mapped: PrediksiBulan[] = (rows ?? []).map((d: {
-        bulan: number; ch_mm: number; suhu: number; kelembaban: number; kat?: number | null
-      }) => ({
+      const mapped: PrediksiBulan[] = rows.map((d) => ({
         bulan: d.bulan,
         bulan_nama: BULAN_SHORT[d.bulan] ?? `Bln ${d.bulan}`,
         ch_mm: d.ch_mm,
