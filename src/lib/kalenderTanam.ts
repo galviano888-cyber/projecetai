@@ -145,11 +145,14 @@ export const LABEL_USER_BORDER: Record<LabelUser, string> = {
   tidak: 'border-red-300/50 bg-red-50/50',
 }
 
-// ─── Fungsi Utilitas: Kelas Kesesuaian (untuk INFO/transparansi) ──────────────
+// ─── Fungsi Utilitas: Evaluasi Kelas Kesesuaian Lahan ─────────────────────────
 //
-// Catatan: kelas S1/S2/S3/N di bawah HANYA dipakai untuk menampilkan info
-// transparansi ke user (parameter ini masuk rentang mana). NILAI CF TIDAK
-// diturunkan dari kelas ini — CF dihitung terpisah dari CF[rule] pakar.
+// Tiap parameter dievaluasi terhadap threshold tanaman (Djaenudin 2011 untuk
+// suhu/RH/KAT, Oldeman 1975 untuk CH) dan diklasifikasikan ke kelas
+// kesesuaian lahan: S1 (Sangat Sesuai), S2 (Cukup), S3 (Marginal), N (Tidak).
+//
+// Kelas ini menjadi dasar nilai CF[evidence] bertingkat (lihat cfParameter):
+// makin sesuai fakta dengan syarat tumbuh, makin tinggi keyakinan buktinya.
 
 /**
  * Evaluasi kelas CH Oldeman aktual vs kebutuhan fase (info).
@@ -243,10 +246,16 @@ export function kombinasiCF(cf1: number, cf2: number): number {
 
 /**
  * Pemetaan CF akhir (0-1) ke 3 label user.
- * Ambang batas:
- *   CF >= 0.70 → Sangat Cocok
- *   0.40 <= CF < 0.70 → Cukup Cocok
- *   CF < 0.40 → Tidak Disarankan
+ *
+ * Ambang batas (interval keyakinan CF):
+ *   CF >= 0.70        → Sangat Cocok    (keyakinan tinggi)
+ *   0.40 <= CF < 0.70 → Cukup Cocok     (keyakinan sedang)
+ *   CF < 0.40         → Tidak Disarankan (keyakinan rendah/negatif)
+ *
+ * Ambang ini mengikuti pembagian interval derajat keyakinan yang umum
+ * dipakai pada penerapan Certainty Factor (Shortliffe & Buchanan, 1975),
+ * di mana CF tinggi mencerminkan kondisi mendekati Sangat Sesuai (S1) dan
+ * CF rendah mencerminkan kondisi marginal/tidak sesuai (S3/N).
  */
 export function cfKeLabelUser(cf: number): LabelUser {
   if (cf >= 0.70) return 'cocok'

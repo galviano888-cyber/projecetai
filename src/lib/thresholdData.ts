@@ -118,12 +118,10 @@ export const DEFAULT_CF_RULE: CfRule = {
   kat:  0.6,  // Ketersediaan air tanah - faktor pendukung
 }
 
-/**
- * CF[evidence] = derajat keyakinan terhadap data fakta.
- * Data prediksi BMKG dianggap memiliki keyakinan 0.9 (bukan observasi 1.0).
- * Ref: keyakinan data prakiraan musim BMKG.
- */
-export const CF_EVIDENCE = 0.9
+// CATATAN: CF[evidence] (derajat keyakinan fakta terhadap syarat tumbuh)
+// didefinisikan bertingkat per kelas kesesuaian di engine (kalenderTanam.ts):
+//   S1=1.0, S2=0.6, S3=0.3, N=-1.0
+// sehingga fakta yang lebih sesuai memberi keyakinan lebih tinggi.
 
 // ─── Data Threshold 10 Tanaman ────────────────────────────────────────────────
 
