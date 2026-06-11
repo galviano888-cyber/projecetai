@@ -59,11 +59,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background font-sans">
       {/* Top utility bar - kesan resmi institusi */}
       <div className="hidden md:block bg-agri-green-dark text-white/80 text-xs">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between h-9">
-          <div className="flex items-center gap-2">
-            <span className="size-1.5 rounded-full bg-agri-yellow" />
-            <span className="tracking-wide">Sekolah Tinggi Meteorologi Klimatologi dan Geofisika &middot; Kabupaten Demak</span>
-          </div>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-end h-9">
           <div className="flex items-center gap-4">
             <span>Sistem Pakar Kalender Tanam</span>
             <span className="text-white/40">|</span>
