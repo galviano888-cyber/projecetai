@@ -103,7 +103,7 @@ export function useKalenderTanam(tahun: number) {
         if (cancelled) return
         setIklim(iklimList)
         setHasil(hitungKalenderTanamLengkap(tahun, iklimList, cfRule))
-      } catch (e) {
+      } catch {
         if (!cancelled) setError('Gagal memuat data kalender tanam.')
       } finally {
         if (!cancelled) setLoading(false)
@@ -261,7 +261,7 @@ export function usePrediksiIklim(tahun: number) {
     async function run() {
       setLoading(true)
       // Sumber utama: prediksi_iklim
-      let rows: any[] = []
+      let rows: { bulan: number; ch_mm: number; suhu: number; kelembaban: number; kat: number | null }[] = []
       const { data: pred } = await supabase
         .from('prediksi_iklim')
         .select('*')
@@ -269,7 +269,7 @@ export function usePrediksiIklim(tahun: number) {
         .order('bulan', { ascending: true })
 
       if (pred && pred.length > 0) {
-        rows = pred.map((d: any) => ({
+        rows = (pred as { bulan: number; ch_mm: number; suhu: number; kelembaban: number; kat: number | null }[]).map((d) => ({
           bulan: d.bulan, ch_mm: d.ch_mm, suhu: d.suhu,
           kelembaban: d.kelembaban, kat: d.kat,
         }))
@@ -280,7 +280,7 @@ export function usePrediksiIklim(tahun: number) {
           .select('*')
           .eq('tahun', tahun)
           .order('bulan', { ascending: true })
-        rows = (cd ?? []).map((d: any) => ({
+        rows = ((cd ?? []) as { bulan: number; ch_mm: number; suhu: number; kelembaban: number; air_tanah: number | null }[]).map((d) => ({
           bulan: d.bulan, ch_mm: d.ch_mm, suhu: d.suhu,
           kelembaban: d.kelembaban, kat: d.air_tanah,
         }))

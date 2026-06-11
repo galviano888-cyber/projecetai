@@ -70,7 +70,7 @@ export function ClimateProvider({ children }: { children: ReactNode }) {
           setCurrentClimate((latest as ClimateData) ?? null)
           setIsFallback(true)
         }
-      } catch (e) {
+      } catch {
         if (!cancelled) {
           setError('Gagal memuat data iklim. Periksa koneksi internet.')
         }

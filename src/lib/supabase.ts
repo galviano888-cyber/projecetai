@@ -57,17 +57,6 @@ export interface Commodity {
   created_at?: string
 }
 
-export interface Recommendation {
-  id?: string
-  bulan: number
-  tahun: number
-  commodity_id: string
-  skor_kecocokan: number
-  catatan?: string
-  created_at?: string
-  commodities?: Commodity
-}
-
 export interface Library {
   id?: string
   commodity_id: string

@@ -28,7 +28,7 @@ WITH c AS (
     waktu_tanam, durasi_panen, jarak_tanam, info_pupuk, hama, risiko, musim)
   VALUES ('Padi Sawah', 'Oryza sativa',
     'Komoditas pangan utama Kabupaten Demak yang dibudidayakan pada lahan sawah beririgasi maupun tadah hujan. Membutuhkan ketersediaan air tinggi sepanjang fase vegetatif hingga generatif.',
-    '/sawah_padi.png',
+    '/sawah_padi.webp',
     150, 300, 24, 29, 70, 90, 80,
     'Awal musim hujan (Nov-Des)', '110-120 hari', '25 x 25 cm (jajar legowo)',
     'Urea 200-250 kg/ha, SP-36 100 kg/ha, KCl 100 kg/ha. Pemupukan bertahap pada 7, 21, dan 40 HST.',
@@ -52,7 +52,7 @@ WITH c AS (
     waktu_tanam, durasi_panen, jarak_tanam, info_pupuk, hama, risiko, musim)
   VALUES ('Jagung', 'Zea mays',
     'Tanaman pangan serbaguna untuk pangan dan pakan ternak. Toleran terhadap berbagai kondisi lahan namun sensitif terhadap genangan air.',
-    '/ladang_jagung.png',
+    '/ladang_jagung.webp',
     100, 200, 21, 30, 60, 80, 60,
     'Awal/akhir musim hujan', '95-110 hari', '70 x 20 cm',
     'Urea 300 kg/ha, SP-36 100 kg/ha, KCl 75 kg/ha. Aplikasi pada 10 dan 35 HST.',
@@ -76,7 +76,7 @@ WITH c AS (
     waktu_tanam, durasi_panen, jarak_tanam, info_pupuk, hama, risiko, musim)
   VALUES ('Kedelai', 'Glycine max',
     'Tanaman palawija sumber protein nabati. Cocok ditanam pada musim kemarau setelah padi karena membutuhkan air sedang dan kondisi kering saat panen.',
-    '/kedelai.jpg',
+    '/kedelai.webp',
     100, 200, 22, 30, 60, 80, 60,
     'Awal kemarau (Apr-Mei)', '80-90 hari', '40 x 15 cm',
     'Urea 50 kg/ha, SP-36 100 kg/ha, KCl 75 kg/ha. Inokulasi Rhizobium dianjurkan.',
@@ -100,7 +100,7 @@ WITH c AS (
     waktu_tanam, durasi_panen, jarak_tanam, info_pupuk, hama, risiko, musim)
   VALUES ('Bawang Merah', 'Allium cepa var. aggregatum',
     'Komoditas hortikultura unggulan Demak dengan nilai ekonomi tinggi. Membutuhkan penyinaran penuh dan tidak tahan kelembapan berlebih.',
-    '/bawang_merah.jpg',
+    '/bawang_merah.webp',
     100, 180, 25, 32, 65, 80, 60,
     'Awal kemarau', '55-70 hari', '15 x 20 cm',
     'Urea 200 kg/ha, ZA 300 kg/ha, SP-36 200 kg/ha, KCl 150 kg/ha.',
@@ -124,7 +124,7 @@ WITH c AS (
     waktu_tanam, durasi_panen, jarak_tanam, info_pupuk, hama, risiko, musim)
   VALUES ('Semangka', 'Citrullus lanatus',
     'Buah semusim musim kemarau dengan perputaran modal cepat. Membutuhkan penyinaran penuh dan kondisi kering saat pembentukan buah untuk rasa manis optimal.',
-    '/semangka.jpg',
+    '/semangka.webp',
     40, 100, 25, 35, 60, 75, 50,
     'Pertengahan kemarau', '60-70 hari', '90 x 50 cm',
     'NPK 16-16-16 sebagai pupuk dasar, ditambah pupuk daun saat pembungaan.',
@@ -148,7 +148,7 @@ WITH c AS (
     waktu_tanam, durasi_panen, jarak_tanam, info_pupuk, hama, risiko, musim)
   VALUES ('Cabai Keriting', 'Capsicum annuum',
     'Hortikultura bernilai tinggi dengan masa panen panjang. Dapat ditanam sepanjang tahun dengan pengelolaan air dan drainase yang baik.',
-    '/cabai.jpg',
+    '/cabai.webp',
     100, 200, 24, 30, 65, 80, 60,
     'Sepanjang tahun', '90-100 hari (mulai panen)', '60 x 50 cm',
     'NPK 16-16-16, pupuk kandang matang 20 ton/ha, pupuk daun saat vegetatif.',
@@ -172,7 +172,7 @@ WITH c AS (
     waktu_tanam, durasi_panen, jarak_tanam, info_pupuk, hama, risiko, musim)
   VALUES ('Petsai/Sawi', 'Brassica rapa',
     'Sayuran daun bersiklus sangat pendek yang dapat dipanen dalam 1-1,5 bulan. Cocok ditanam berulang sepanjang tahun.',
-    '/sawi.jpg',
+    '/sawi.webp',
     100, 200, 22, 32, 70, 85, 65,
     'Sepanjang tahun', '30-45 hari', '20 x 20 cm',
     'Urea 100 kg/ha, pupuk kandang 10 ton/ha. Banyak butuh nitrogen untuk daun.',
@@ -196,7 +196,7 @@ WITH c AS (
     waktu_tanam, durasi_panen, jarak_tanam, info_pupuk, hama, risiko, musim)
   VALUES ('Melon', 'Cucumis melo',
     'Buah semusim premium musim kemarau. Membutuhkan penyinaran penuh dan kondisi kering saat pematangan untuk rasa manis maksimal.',
-    '/melon.jpg',
+    '/melon.webp',
     40, 100, 25, 35, 55, 75, 50,
     'Pertengahan kemarau', '60-75 hari', '60 x 50 cm',
     'NPK 16-16-16 bertahap, kalsium dan kalium tinggi saat pembentukan buah.',
@@ -220,7 +220,7 @@ WITH c AS (
     waktu_tanam, durasi_panen, jarak_tanam, info_pupuk, hama, risiko, musim)
   VALUES ('Cabai Rawit', 'Capsicum frutescens',
     'Cabai bercita rasa pedas tinggi dengan masa panen panjang dan lebih toleran terhadap cuaca dibanding cabai besar.',
-    '/cabai.jpg',
+    '/cabai.webp',
     100, 200, 24, 30, 65, 80, 55,
     'Sepanjang tahun', '90-110 hari (mulai panen)', '50 x 50 cm',
     'NPK 16-16-16, pupuk kandang 20 ton/ha, tambahan KNO3 saat pembuahan.',
@@ -244,7 +244,7 @@ WITH c AS (
     waktu_tanam, durasi_panen, jarak_tanam, info_pupuk, hama, risiko, musim)
   VALUES ('Terung', 'Solanum melongena',
     'Sayuran buah yang produktif dan mudah dibudidayakan, dengan masa panen panjang dan adaptasi luas terhadap iklim.',
-    '/terung.jpg',
+    '/terung.webp',
     100, 200, 22, 30, 65, 80, 55,
     'Sepanjang tahun', '70-80 hari (mulai panen)', '60 x 50 cm',
     'NPK 16-16-16, pupuk kandang 15-20 ton/ha, pupuk susulan tiap 2 minggu.',

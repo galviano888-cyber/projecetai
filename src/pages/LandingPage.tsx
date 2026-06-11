@@ -360,14 +360,15 @@ export default function LandingPage() {
               <Badge className="mb-4 bg-agri-yellow text-amber-900 border-none hover:bg-agri-yellow/90">Analisis Pertanian Demak</Badge>
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6">Potensi Pertanian <br /> Kabupaten Demak</h2>
               <p className="text-white/70 text-lg mb-8 leading-relaxed text-justify">
-                Demak dikenal sebagai lumbung pangan Jawa Tengah dengan komoditas yang sangat beragam, mulai dari tanaman pangan hingga buah-buahan ikonik.
+                Demak dikenal sebagai lumbung pangan Jawa Tengah. Sistem ini berfokus pada 10 komoditas
+                unggulan daerah, mencakup tanaman pangan hingga hortikultura bernilai tinggi.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
-                  { title: "Tanaman Pangan", items: "Padi, Jagung, Kacang Hijau, Kedelai" },
-                  { title: "Hortikultura Buah", items: "Jambu Air (Merah Delima), Belimbing" },
-                  { title: "Sayuran Musiman", items: "Bawang Merah, Cabai, Tomat" },
-                  { title: "Tanaman Perkebunan", items: "Tembakau, Kelapa" },
+                  { title: "Tanaman Pangan", items: "Padi Sawah, Jagung, Kedelai" },
+                  { title: "Sayuran Umbi & Daun", items: "Bawang Merah, Petsai/Sawi" },
+                  { title: "Hortikultura Buah", items: "Semangka, Melon" },
+                  { title: "Sayuran Buah", items: "Cabai Keriting, Cabai Rawit, Terung" },
                 ].map((cat) => (
                   <div key={cat.title} className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
                     <h4 className="font-bold text-agri-yellow text-sm uppercase tracking-wider mb-1">{cat.title}</h4>
@@ -380,18 +381,18 @@ export default function LandingPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-4 pt-8">
                   <div className="aspect-square rounded-3xl overflow-hidden shadow-2xl hover:scale-105 transition-transform">
-                    <img src="/sawah_padi.png" alt="Lahan Pertanian Padi" className="w-full h-full object-cover" />
+                    <img src="/sawah_padi.webp" alt="Lahan Pertanian Padi" loading="lazy" className="w-full h-full object-cover" />
                   </div>
                   <div className="aspect-video rounded-3xl overflow-hidden shadow-2xl hover:scale-105 transition-transform">
-                    <img src="/ladang_jagung.png" alt="Palawija Jagung" className="w-full h-full object-cover" />
+                    <img src="/ladang_jagung.webp" alt="Palawija Jagung" loading="lazy" className="w-full h-full object-cover" />
                   </div>
                 </div>
                 <div className="space-y-4">
                   <div className="aspect-video rounded-3xl overflow-hidden shadow-2xl hover:scale-105 transition-transform">
-                    <img src="/panen_sayuran.png" alt="Panen Sayuran" className="w-full h-full object-cover" />
+                    <img src="/panen_sayuran.webp" alt="Panen Sayuran" loading="lazy" className="w-full h-full object-cover" />
                   </div>
                   <div className="aspect-square rounded-3xl overflow-hidden shadow-2xl hover:scale-105 transition-transform">
-                    <img src="/perkebunan_tembakau.png" alt="Perkebunan Tembakau" className="w-full h-full object-cover" />
+                    <img src="/bawang_merah.webp" alt="Bawang Merah" loading="lazy" className="w-full h-full object-cover" />
                   </div>
                 </div>
               </div>
@@ -508,7 +509,7 @@ export default function LandingPage() {
               <ul className="space-y-2 text-sm text-white/70">
                 <li className="flex items-center gap-2"><span className="text-agri-yellow">&#9657;</span> Metode: Forward Chaining</li>
                 <li className="flex items-center gap-2"><span className="text-agri-yellow">&#9657;</span> Evaluasi: Certainty Factor</li>
-                <li className="flex items-center gap-2"><span className="text-agri-yellow">&#9657;</span> Komoditas: Padi, Jagung, Bawang, Tembakau</li>
+                <li className="flex items-center gap-2"><span className="text-agri-yellow">&#9657;</span> Komoditas: Padi, Jagung, Kedelai, Bawang Merah</li>
                 <li className="flex items-center gap-2"><span className="text-agri-yellow">&#9657;</span> Wilayah: Kabupaten Demak</li>
               </ul>
             </div>
