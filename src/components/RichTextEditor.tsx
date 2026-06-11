@@ -106,7 +106,7 @@ export function RichContent({ html, className = '' }: RichContentProps) {
     <div
       className={`prose prose-sm max-w-none text-foreground ${
         className
-      } [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-semibold [&_ul]:pl-4 [&_ol]:pl-4 [&_li]:my-0.5`}
+      } [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-semibold [&_ul]:pl-4 [&_ol]:pl-4 [&_li]:my-0.5 [&_p]:text-justify [&_p]:leading-relaxed [&_li]:text-justify`}
       dangerouslySetInnerHTML={{ __html: clean }}
     />
   )

@@ -402,7 +402,7 @@ function LibSection({
         </h2>
         {isHtml
           ? <RichContent html={content} />
-          : <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{content}</p>
+          : <p className="text-sm text-foreground leading-relaxed whitespace-pre-line text-justify">{content}</p>
         }
       </CardContent>
     </Card>
