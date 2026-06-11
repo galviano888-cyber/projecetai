@@ -95,26 +95,32 @@ export default function LibraryDetailPage() {
   const musimCfg = MUSIM_CONFIG[commodity.musim ?? 'sepanjang_tahun']
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background font-sans">
       {/* Header */}
-      <div className="bg-agri-green-dark text-white">
-        <div className="mx-auto max-w-3xl px-4 py-8">
+      <div className="relative overflow-hidden bg-gradient-to-br from-agri-green-dark to-[oklch(0.34_0.10_152)] text-white">
+        <div className="absolute inset-0 bg-grid opacity-25" />
+        <div className="absolute -top-20 -right-10 size-72 rounded-full bg-agri-blue/20 blur-[110px]" />
+        <div className="relative mx-auto max-w-3xl px-4 py-8">
           {/* Breadcrumb */}
           <Link
             to="/library"
-            className="inline-flex items-center gap-1.5 text-white/70 hover:text-white text-sm mb-6 transition-colors"
+            className="inline-flex items-center gap-1.5 text-white/70 hover:text-white text-sm mb-6 transition-colors group"
           >
-            <ArrowLeft className="size-4" /> Kembali ke Library
+            <ArrowLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" /> Kembali ke Library
           </Link>
 
           <div className="flex items-start gap-4">
-            <div className="size-16 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
-              <Leaf className="size-8 text-agri-yellow" />
+            <div className="size-16 rounded-2xl bg-white/10 ring-1 ring-white/15 flex items-center justify-center shrink-0 overflow-hidden">
+              {commodity.foto_url ? (
+                <img src={commodity.foto_url} alt={commodity.nama} className="size-full object-cover" />
+              ) : (
+                <Leaf className="size-8 text-agri-yellow" />
+              )}
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 flex-wrap mb-2">
                 {musimCfg && (
-                  <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${
+                  <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold bg-white/90 ${
                     musimCfg.color
                   }`}>
                     {musimCfg.label}
@@ -131,7 +137,7 @@ export default function LibraryDetailPage() {
                   </span>
                 )}
               </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-white">{commodity.nama}</h1>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{commodity.nama}</h1>
               {commodity.nama_ilmiah && (
                 <p className="text-white/60 italic text-sm mt-0.5">{commodity.nama_ilmiah}</p>
               )}
@@ -307,8 +313,8 @@ export default function LibraryDetailPage() {
 
         {/* Sumber referensi */}
         <p className="text-[10px] text-muted-foreground text-center pb-4">
-          Syarat tumbuh bersumber dari: Ritung et al. (2011) Petunjuk Teknis Evaluasi Lahan,
-          BBSDLP Badan Litbang Pertanian &bull; FAO AQUASTAT (2002) &bull; IRRI Knowledge Bank (2023)
+          Syarat tumbuh bersumber dari: Djaenudin et al. (2011) Petunjuk Teknis Evaluasi Lahan, BBSDLP
+          &bull; Oldeman (1975) Klasifikasi Agroklimat &bull; FAO-56 Allen et al. (1998)
         </p>
 
         {/* Back link */}
