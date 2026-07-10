@@ -179,7 +179,9 @@ function evaluasiRh(rh: number, t: TanamanThreshold['threshold']): KelasKesesuai
 }
 
 function evaluasiKat(kat: number | undefined, t: TanamanThreshold['threshold']): KelasKesesuaian {
-  if (kat == null) return 'S2'
+  // KAT null/undefined berarti data tidak tersedia — gunakan S3 (marginal)
+  // bukan S2, agar sistem tidak terlalu optimistis saat data KAT absen.
+  if (kat == null) return 'S3'
   if (kat >= t.katS1Min) return 'S1'
   if (kat >= t.katS2Min) return 'S2'
   if (kat >= t.katS3Min) return 'S3'
@@ -220,20 +222,35 @@ function cfParameter(kelas: KelasKesesuaian, cfRule: number): number {
  * bobot = CF[rule] parameter tersebut. Parameter yang lebih kritis (CH)
  * memberi kontribusi lebih besar.
  *
+ * Rumus: sum(cf_i × bobot_i) / sum(bobot_i)
+ * di mana cf_i = CF[rule]_i × CF[evidence]_i (sudah dihitung di cfParameter),
+ * dan bobot_i = CF[rule]_i.
+ *
  * Tidak memakai penjumlahan MYCIN agar nilai tidak jenuh ke 1.0 dan tetap
  * proporsional terhadap derajat kecocokan tiap parameter.
+ *
+ * Ref: weighted average CF — Shortliffe & Buchanan (1975), adaptasi
+ * kesesuaian lahan Djaenudin et al. (2011).
  */
 function cfGabunganFase(
   cfParams: { cf: number; bobot: number }[]
 ): number {
   const totalBobot = cfParams.reduce((s, p) => s + p.bobot, 0)
   if (totalBobot === 0) return 0
-  return cfParams.reduce((s, p) => s + p.cf, 0) / totalBobot
+  // Weighted average: sum(cf × bobot) / sum(bobot)
+  return cfParams.reduce((s, p) => s + p.cf * p.bobot, 0) / totalBobot
 }
 
 /**
  * Kombinasi dua nilai CF (rumus MYCIN / Shortliffe-Buchanan 1975).
- * Dipertahankan untuk keperluan kompatibilitas/utilitas.
+ *
+ * CATATAN ARSITEKTUR: Fungsi ini adalah utilitas murni dan dipakai oleh
+ * unit test (kalenderTanam.test.ts) untuk memverifikasi rumus MYCIN secara
+ * terpisah. Engine utama (hitungKalenderTanam) TIDAK memanggil fungsi ini —
+ * engine menggunakan cfGabunganFase (weighted average per fase) agar nilai
+ * CF tetap proporsional dan tidak jenuh ke 1.0.
+ *
+ * Fungsi ini tetap di-export sebagai referensi akademis / keperluan ekstensi.
  */
 export function kombinasiCF(cf1: number, cf2: number): number {
   if (cf1 >= 0 && cf2 >= 0) return cf1 + cf2 * (1 - cf1)

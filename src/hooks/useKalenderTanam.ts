@@ -42,6 +42,7 @@ async function fetchIklim(tahun: number): Promise<IklimBulan[]> {
     .from('prediksi_iklim')
     .select('*')
     .in('tahun', [tahun, tahun + 1])
+    .order('tahun', { ascending: true })
     .order('bulan', { ascending: true })
 
   if (!error && data && data.length > 0) {
@@ -125,24 +126,31 @@ export function useRekomendasiBulan(bulanTanam: number, tahunTanam: number, topN
   const [hasil, setHasil] = useState<HasilKalenderTanam[]>([])
   const [loading, setLoading] = useState(true)
   const [adaData, setAdaData] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
 
     async function run() {
       setLoading(true)
-      const [cfRule, iklimList] = await Promise.all([fetchCfRule(), fetchIklim(tahunTanam)])
-      if (cancelled) return
-      setAdaData(iklimList.length > 0)
-      setHasil(rekomendasiBulan(bulanTanam, tahunTanam, iklimList, cfRule, topN))
-      setLoading(false)
+      setError(null)
+      try {
+        const [cfRule, iklimList] = await Promise.all([fetchCfRule(), fetchIklim(tahunTanam)])
+        if (cancelled) return
+        setAdaData(iklimList.length > 0)
+        setHasil(rekomendasiBulan(bulanTanam, tahunTanam, iklimList, cfRule, topN))
+      } catch {
+        if (!cancelled) setError('Gagal memuat data rekomendasi.')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
     }
 
     run()
     return () => { cancelled = true }
   }, [bulanTanam, tahunTanam, topN])
 
-  return { hasil, loading, adaData }
+  return { hasil, loading, adaData, error }
 }
 
 /**

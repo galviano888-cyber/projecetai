@@ -19,22 +19,27 @@ export default function AdminDashboard() {
     let cancelled = false
 
     async function fetchSummary() {
-      const [{ data: latest }, { count }] = await Promise.all([
-        supabase
-          .from('climate_data')
-          .select('*')
-          .order('tahun', { ascending: false })
-          .order('bulan', { ascending: false })
-          .limit(1)
-          .single(),
-        supabase
-          .from('climate_data')
-          .select('*', { count: 'exact', head: true }),
-      ])
-      if (cancelled) return
-      setLatestData(latest as ClimateData)
-      setTotalData(count ?? 0)
-      setLoading(false)
+      try {
+        const [{ data: latest, error: e1 }, { count, error: e2 }] = await Promise.all([
+          supabase
+            .from('climate_data')
+            .select('*')
+            .order('tahun', { ascending: false })
+            .order('bulan', { ascending: false })
+            .limit(1)
+            .single(),
+          supabase
+            .from('climate_data')
+            .select('*', { count: 'exact', head: true }),
+        ])
+        if (cancelled) return
+        if (!e1 && latest) setLatestData(latest as ClimateData)
+        if (!e2) setTotalData(count ?? 0)
+      } catch {
+        // Gagal memuat summary — biarkan loading selesai tanpa crash
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
     }
 
     fetchSummary()
