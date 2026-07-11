@@ -31,8 +31,9 @@ export function ClimateProvider({ children }: { children: ReactNode }) {
       const tahun = now.getFullYear()
 
       try {
-        // Coba bulan ini dulu
-        const { data: exact } = await supabase
+        // Coba bulan ini dulu — tangkap error agar tidak lanjut ke fallback
+        // saat query memang gagal (bukan sekadar no rows).
+        const { data: exact, error: exactErr } = await supabase
           .from('climate_data')
           .select('*')
           .eq('bulan', bulan)
@@ -40,6 +41,11 @@ export function ClimateProvider({ children }: { children: ReactNode }) {
           .single()
 
         if (cancelled) return
+
+        // PGRST116 = no rows → lanjut ke fallback. Error lain → lempar.
+        if (exactErr && exactErr.code !== 'PGRST116') {
+          throw new Error(exactErr.message)
+        }
 
         if (exact) {
           setCurrentClimate(exact as ClimateData)

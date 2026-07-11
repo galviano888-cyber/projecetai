@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { PrediksiIklim } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -68,7 +68,9 @@ export default function AdminKalenderTanam() {
     setTimeout(() => setToast(null), 4000)
   }
 
-  async function fetchData(p = page) {
+  // useCallback memastikan fetchData stabil antar render sehingga tidak
+  // menyebabkan stale closure saat dipanggil dari useEffect atau handler lain.
+  const fetchData = useCallback(async (p: number) => {
     setLoading(true)
     const from = (p - 1) * PAGE_SIZE
     const to = from + PAGE_SIZE - 1
@@ -90,10 +92,11 @@ export default function AdminKalenderTanam() {
       setTotal(count ?? 0)
     }
     setLoading(false)
-  }
+  }, [filterTahun])
 
-  useEffect(() => { fetchData(1); setPage(1) }, [filterTahun])
-  useEffect(() => { fetchData(page) }, [page])
+  // Reset ke halaman 1 saat filter tahun berubah
+  useEffect(() => { setPage(1); fetchData(1) }, [filterTahun, fetchData])
+  useEffect(() => { fetchData(page) }, [page, fetchData])
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
@@ -160,7 +163,7 @@ export default function AdminKalenderTanam() {
 
     setSaving(false)
     setShowForm(false)
-    fetchData()
+    fetchData(page)
   }
 
   async function handleDelete(id: string, label: string) {
@@ -168,7 +171,7 @@ export default function AdminKalenderTanam() {
     if (error) showToast('error', `Gagal menghapus: ${error.message}`)
     else showToast('success', `Data ${label} berhasil dihapus.`)
     setDeleteId(null)
-    fetchData()
+    fetchData(page)
   }
 
   return (

@@ -74,11 +74,10 @@ describe('hitungKalenderTanam - diskriminasi CF', () => {
   const padi = THRESHOLD_TANAMAN.find(t => t.nama === 'Padi Sawah')!
 
   it('kondisi ideal padi (semua bulan BB, suhu/RH/KAT optimal) -> cocok, CF tinggi', () => {
-    // Padi fase 1-4 butuh BB, fase 5 butuh BL. Set CH tinggi sepanjang tahun
-    // tapi bulan ke-5 (panen) diberi BL agar pas.
+    // Padi 4 bulan: fase 1-3 butuh BB, fase 4 (Llate) butuh BL.
+    // Tanam Januari → fase Llate jatuh di April (bulan ke-4).
     const data = iklim12(2026, {
-      // tanam Januari: fase 5 jatuh di Mei
-      5: { ch_mm: 150, suhu: 27, kelembaban: 80, kat: 85 }, // BL untuk pemasakan
+      4: { ch_mm: 150, suhu: 27, kelembaban: 80, kat: 85 }, // BL untuk pemasakan
     })
     const map = buatIklimMap(data)
     const hasil = hitungKalenderTanam(padi, 1, 2026, map)

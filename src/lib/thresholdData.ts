@@ -129,53 +129,57 @@ export const THRESHOLD_TANAMAN: TanamanThreshold[] = [
   // =========================================================================
   // 1. PADI SAWAH
   // Ref Suhu/RH/KAT: Djaenudin 2011 hal.11-12
-  // Ref Fase: FAO-56 Table 11 (Paddy rice, tropics)
-  // Zona Oldeman: B1-C1 (butuh >= 5 BB berturut)
+  // Ref Fase: FAO-56 Table 11 (Paddy rice, tropics) — disesuaikan varietas
+  //           genjah lokal Indonesia (Ciherang, IR64, Inpari): 110-120 HST
+  //           FAO-56 tropics: Lini=20, Ldev=30, Lmid=55, Llate=15 → 120 hari
+  // Zona Oldeman: B1-C1 (butuh >= 4 BB berturut)
   // =========================================================================
   {
     nama: 'Padi Sawah',
-    totalHari: 150,
-    totalBulan: 5,
-    zonaOldeman: 'B1-C1 (padi butuh >= 5 BB berturut)',
-    polaCh: ['BB', 'BB', 'BB', 'BB', 'BL'],
+    totalHari: 120,
+    totalBulan: 4,
+    zonaOldeman: 'B1-C1 (padi butuh >= 4 BB berturut)',
+    polaCh: ['BB', 'BB', 'BB', 'BL'],
     fase: [
-      { nama: 'Lini (Initial)',     hariAwal: 1,   hariAkhir: 30,  durasi: 30, chButuh: 'BB', keterangan: 'Perkecambahan, pembibitan, awal tanam' },
-      { nama: 'Ldev (Development)', hariAwal: 31,  hariAkhir: 60,  durasi: 30, chButuh: 'BB', keterangan: 'Vegetatif awal, pembentukan anakan' },
-      { nama: 'Lmid (Mid-season)',  hariAwal: 61,  hariAkhir: 120, durasi: 60, chButuh: 'BB', keterangan: 'Anakan aktif, pembungaan, pengisian' },
-      { nama: 'Llate (Late-season)',hariAwal: 121, hariAkhir: 150, durasi: 30, chButuh: 'BL', keterangan: 'Pemasakan bulir, persiapan panen' },
+      { nama: 'Lini (Initial)',     hariAwal: 1,  hariAkhir: 20,  durasi: 20, chButuh: 'BB', keterangan: 'Perkecambahan, pembibitan, awal tanam' },
+      { nama: 'Ldev (Development)', hariAwal: 21, hariAkhir: 50,  durasi: 30, chButuh: 'BB', keterangan: 'Vegetatif awal, pembentukan anakan' },
+      { nama: 'Lmid (Mid-season)',  hariAwal: 51, hariAkhir: 105, durasi: 55, chButuh: 'BB', keterangan: 'Anakan aktif, pembungaan, pengisian biji' },
+      { nama: 'Llate (Late-season)',hariAwal: 106, hariAkhir: 120, durasi: 15, chButuh: 'BL', keterangan: 'Pemasakan bulir, persiapan panen' },
     ],
     threshold: {
       suhuS1Min: 24, suhuS1Max: 29, suhuS2Min: 22, suhuS2Max: 32, suhuS3Min: 20, suhuS3Max: 35,
       rhS1Min: 70,   rhS1Max: 90,   rhS2Min: 60,   rhS2Max: 95,   rhS3Min: 50,   rhS3Max: 98,
       katS1Min: 80,  katS2Min: 70,  katS3Min: 60,
     },
-    referensi: 'Djaenudin et al. 2011 hal.11-12; FAO-56 Table 11; Oldeman 1975',
+    referensi: 'Djaenudin et al. 2011 hal.11-12; FAO-56 Table 11 (Paddy rice tropics); Oldeman 1975; BBPADI 2015 (var. Ciherang/Inpari)',
   },
 
   // =========================================================================
   // 2. JAGUNG
   // Ref Suhu/RH/KAT: Djaenudin 2011 hal.21-22
-  // Ref Fase: FAO-56 Table 11 (Maize, Arid climate)
+  // Ref Fase: FAO-56 Table 11 (Maize, field corn) — disesuaikan varietas lokal
+  //           Indonesia (Pioneer P27, NK212, Bisi-2): 95-110 HST
+  //           FAO-56: Lini=20, Ldev=35, Lmid=40, Llate=10 → 105 hari
   // Zona Oldeman: C2-D2 (palawija, BL vegetatif, BK panen)
   // =========================================================================
   {
     nama: 'Jagung',
-    totalHari: 140,
-    totalBulan: 5,
+    totalHari: 105,
+    totalBulan: 4,
     zonaOldeman: 'C2-D2 (palawija, BL vegetatif, BK panen)',
-    polaCh: ['BL', 'BL', 'BL', 'BL', 'BK'],
+    polaCh: ['BL', 'BL', 'BL', 'BK'],
     fase: [
-      { nama: 'Lini (Initial)',     hariAwal: 1,   hariAkhir: 25,  durasi: 25, chButuh: 'BL', keterangan: 'Perkecambahan, emergence' },
-      { nama: 'Ldev (Development)', hariAwal: 26,  hariAkhir: 65,  durasi: 40, chButuh: 'BL', keterangan: 'Vegetatif, pembentukan daun' },
-      { nama: 'Lmid (Mid-season)',  hariAwal: 66,  hariAkhir: 110, durasi: 45, chButuh: 'BL', keterangan: 'Pembungaan, pengisian biji' },
-      { nama: 'Llate (Late-season)',hariAwal: 111, hariAkhir: 140, durasi: 30, chButuh: 'BK', keterangan: 'Pemasakan, pengeringan biji' },
+      { nama: 'Lini (Initial)',     hariAwal: 1,   hariAkhir: 20,  durasi: 20, chButuh: 'BL', keterangan: 'Perkecambahan, emergence' },
+      { nama: 'Ldev (Development)', hariAwal: 21,  hariAkhir: 55,  durasi: 35, chButuh: 'BL', keterangan: 'Vegetatif, pembentukan daun' },
+      { nama: 'Lmid (Mid-season)',  hariAwal: 56,  hariAkhir: 95,  durasi: 40, chButuh: 'BL', keterangan: 'Pembungaan, pengisian biji' },
+      { nama: 'Llate (Late-season)',hariAwal: 96,  hariAkhir: 105, durasi: 10, chButuh: 'BK', keterangan: 'Pemasakan biji, panen' },
     ],
     threshold: {
-      suhuS1Min: 21, suhuS1Max: 30, suhuS2Min: 18, suhuS2Max: 33, suhuS3Min: 15, suhuS3Max: 35,
+      suhuS1Min: 21, suhuS1Max: 30, suhuS2Min: 18, suhuS2Max: 32, suhuS3Min: 15, suhuS3Max: 35,
       rhS1Min: 60,   rhS1Max: 80,   rhS2Min: 50,   rhS2Max: 85,   rhS3Min: 40,   rhS3Max: 90,
-      katS1Min: 60,  katS2Min: 50,  katS3Min: 40,
+      katS1Min: 55,  katS2Min: 45,  katS3Min: 35,
     },
-    referensi: 'Djaenudin et al. 2011 hal.21-22; FAO-56 Table 11; Oldeman 1975',
+    referensi: 'Djaenudin et al. 2011 hal.21-22; FAO-56 Table 11 (Maize field corn); Oldeman 1975; Badan Litbang Pertanian 2011',
   },
 
   // =========================================================================
@@ -206,27 +210,29 @@ export const THRESHOLD_TANAMAN: TanamanThreshold[] = [
   // =========================================================================
   // 4. BAWANG MERAH
   // Ref Suhu/RH/KAT: Djaenudin 2011 hal.55-56
-  // Ref Fase: FAO-56 Table 11 (Onion, Arid)
+  // Ref Fase: FAO-56 Table 11 (Onion, short-day) — disesuaikan varietas lokal
+  //           Indonesia (Brebes, Bima Brebes, Tuk-Tuk): 60-75 HST
+  //           FAO-56 short-day onion: Lini=15, Ldev=25, Lmid=20, Llate=10 → 70 hari
   // Zona Oldeman: Palawija (BL vegetatif, BK panen)
   // =========================================================================
   {
     nama: 'Bawang Merah',
-    totalHari: 210,
-    totalBulan: 7,
+    totalHari: 70,
+    totalBulan: 3,
     zonaOldeman: 'Palawija (BL vegetatif, BK panen)',
-    polaCh: ['BL', 'BL', 'BL', 'BL', 'BL', 'BL', 'BK'],
+    polaCh: ['BL', 'BL', 'BK'],
     fase: [
-      { nama: 'Lini (Initial)',     hariAwal: 1,   hariAkhir: 20,  durasi: 20,  chButuh: 'BL', keterangan: 'Perkecambahan, pertunasan' },
-      { nama: 'Ldev (Development)', hariAwal: 21,  hariAkhir: 55,  durasi: 35,  chButuh: 'BL', keterangan: 'Vegetatif, pembentukan daun' },
-      { nama: 'Lmid (Mid-season)',  hariAwal: 56,  hariAkhir: 165, durasi: 110, chButuh: 'BL', keterangan: 'Pembesaran umbi, pematangan' },
-      { nama: 'Llate (Late-season)',hariAwal: 166, hariAkhir: 210, durasi: 45,  chButuh: 'BK', keterangan: 'Pengeringan, panen umbi' },
+      { nama: 'Lini (Initial)',     hariAwal: 1,  hariAkhir: 15, durasi: 15, chButuh: 'BL', keterangan: 'Pertunasan, perkecambahan umbi bibit' },
+      { nama: 'Ldev (Development)', hariAwal: 16, hariAkhir: 40, durasi: 25, chButuh: 'BL', keterangan: 'Vegetatif, pembentukan dan pemanjangan daun' },
+      { nama: 'Lmid (Mid-season)',  hariAwal: 41, hariAkhir: 60, durasi: 20, chButuh: 'BL', keterangan: 'Pembesaran dan pematangan umbi' },
+      { nama: 'Llate (Late-season)',hariAwal: 61, hariAkhir: 70, durasi: 10, chButuh: 'BK', keterangan: 'Pengeringan daun, panen umbi' },
     ],
     threshold: {
       suhuS1Min: 25, suhuS1Max: 32, suhuS2Min: 22, suhuS2Max: 35, suhuS3Min: 20, suhuS3Max: 38,
       rhS1Min: 65,   rhS1Max: 80,   rhS2Min: 55,   rhS2Max: 85,   rhS3Min: 45,   rhS3Max: 90,
       katS1Min: 60,  katS2Min: 50,  katS3Min: 40,
     },
-    referensi: 'Djaenudin et al. 2011 hal.55-56; FAO-56 Table 11; Oldeman 1975',
+    referensi: 'Djaenudin et al. 2011 hal.55-56; FAO-56 Table 11 (Onion short-day); Oldeman 1975; Puslitbang Hortikultura 2015 (var. Bima Brebes)',
   },
 
   // =========================================================================
@@ -258,53 +264,58 @@ export const THRESHOLD_TANAMAN: TanamanThreshold[] = [
   // =========================================================================
   // 6. CABAI KERITING
   // Ref Suhu/RH/KAT: Djaenudin 2011 hal.61-62
-  // Ref Fase: FAO-56 Table 11 (Pepper, Arid)
+  // Ref Fase: FAO-56 Table 11 (Pepper) — disesuaikan varietas lokal Indonesia
+  //           (TM999, Lado, Keriting Lokal): panen perdana 75-90 HST setelah
+  //           tanam pindah, total s/d panen perdana ~150 hari dari semai
+  //           FAO-56: Lini=25, Ldev=35, Lmid=40, Llate=20 → 120h di lapang
+  //           + 30 hari masa semai = 150 hari total (semai→panen perdana)
   // Zona Oldeman: Palawija sepanjang tahun (BL semua fase)
   // =========================================================================
   {
     nama: 'Cabai Keriting',
-    totalHari: 210,
-    totalBulan: 7,
+    totalHari: 150,
+    totalBulan: 5,
     zonaOldeman: 'Palawija sepanjang tahun (BL semua fase)',
-    polaCh: ['BL', 'BL', 'BL', 'BL', 'BL', 'BL', 'BL'],
+    polaCh: ['BL', 'BL', 'BL', 'BL', 'BL'],
     fase: [
-      { nama: 'Lini (Initial)',     hariAwal: 1,   hariAkhir: 30,  durasi: 30,  chButuh: 'BL', keterangan: 'Perkecambahan, pembibitan' },
-      { nama: 'Ldev (Development)', hariAwal: 31,  hariAkhir: 70,  durasi: 40,  chButuh: 'BL', keterangan: 'Vegetatif, pembentukan cabang' },
-      { nama: 'Lmid (Mid-season)',  hariAwal: 71,  hariAkhir: 180, durasi: 110, chButuh: 'BL', keterangan: 'Pembungaan, pembuahan, panen awal' },
-      { nama: 'Llate (Late-season)',hariAwal: 181, hariAkhir: 210, durasi: 30,  chButuh: 'BL', keterangan: 'Panen lanjutan, akhir musim' },
+      { nama: 'Lini (Semai+Initial)',  hariAwal: 1,   hariAkhir: 40,  durasi: 40, chButuh: 'BL', keterangan: 'Semai, perkecambahan, pindah tanam' },
+      { nama: 'Ldev (Development)',    hariAwal: 41,  hariAkhir: 80,  durasi: 40, chButuh: 'BL', keterangan: 'Vegetatif, pembentukan cabang utama' },
+      { nama: 'Lmid (Mid-season)',     hariAwal: 81,  hariAkhir: 130, durasi: 50, chButuh: 'BL', keterangan: 'Pembungaan, pembentukan buah pertama' },
+      { nama: 'Llate (Late-season)',   hariAwal: 131, hariAkhir: 150, durasi: 20, chButuh: 'BL', keterangan: 'Panen perdana, awal panen rutin' },
     ],
     threshold: {
       suhuS1Min: 24, suhuS1Max: 30, suhuS2Min: 22, suhuS2Max: 32, suhuS3Min: 18, suhuS3Max: 35,
       rhS1Min: 65,   rhS1Max: 80,   rhS2Min: 55,   rhS2Max: 85,   rhS3Min: 45,   rhS3Max: 90,
       katS1Min: 60,  katS2Min: 50,  katS3Min: 40,
     },
-    referensi: 'Djaenudin et al. 2011 hal.61-62; FAO-56 Table 11; Oldeman 1975',
+    referensi: 'Djaenudin et al. 2011 hal.61-62; FAO-56 Table 11 (Pepper); Oldeman 1975; Puslitbang Hortikultura 2014 (var. TM999/Lado)',
   },
 
   // =========================================================================
   // 7. PETSAI/SAWI
   // Ref Suhu/RH/KAT: Djaenudin 2011 hal.73-74 (modif. var. dataran rendah)
   //                  AVRDC 2005 - Vegetable Production Training Manual
-  // Ref Fase: FAO-56 Table 11 (Lettuce/Cabbage)
+  // Ref Fase: FAO-56 Table 11 (Cabbage/Chinese cabbage) — disesuaikan varietas
+  //           sawi lokal Indonesia (Sawi Hijau, Caisim, Pakcoy): 30-45 HST
+  //           FAO-56 cabbage: Lini=10, Ldev=20, Lmid=10, Llate=5 → 45 hari
   // Zona Oldeman: Palawija (BL semua fase)
   // =========================================================================
   {
     nama: 'Petsai/Sawi',
-    totalHari: 95,
-    totalBulan: 3,
+    totalHari: 45,
+    totalBulan: 2,
     zonaOldeman: 'Palawija (BL semua fase)',
-    polaCh: ['BL', 'BL', 'BL'],
+    polaCh: ['BL', 'BL'],
     fase: [
-      { nama: 'Lini+Ldev (Init+Dev)',    hariAwal: 1,  hariAkhir: 60, durasi: 60, chButuh: 'BL', keterangan: 'Perkecambahan hingga vegetatif' },
-      { nama: 'Lmid (Mid-season)',        hariAwal: 61, hariAkhir: 85, durasi: 25, chButuh: 'BL', keterangan: 'Pembentukan daun, pengisian' },
-      { nama: 'Llate (Late-season)',      hariAwal: 86, hariAkhir: 95, durasi: 10, chButuh: 'BL', keterangan: 'Panen daun' },
+      { nama: 'Lini+Ldev (Init+Dev)', hariAwal: 1,  hariAkhir: 30, durasi: 30, chButuh: 'BL', keterangan: 'Perkecambahan, pembentukan daun awal' },
+      { nama: 'Lmid+Llate (Mid+Late)',hariAwal: 31, hariAkhir: 45, durasi: 15, chButuh: 'BL', keterangan: 'Pengisian daun, panen' },
     ],
     threshold: {
       suhuS1Min: 22, suhuS1Max: 32, suhuS2Min: 20, suhuS2Max: 35, suhuS3Min: 18, suhuS3Max: 38,
       rhS1Min: 70,   rhS1Max: 85,   rhS2Min: 60,   rhS2Max: 90,   rhS3Min: 50,   rhS3Max: 95,
       katS1Min: 65,  katS2Min: 55,  katS3Min: 45,
     },
-    referensi: 'Djaenudin et al. 2011 hal.73-74 (modif. dataran rendah); AVRDC 2005; FAO-56 Table 11; Oldeman 1975',
+    referensi: 'Djaenudin et al. 2011 hal.73-74 (modif. dataran rendah); AVRDC 2005; FAO-56 Table 11 (Cabbage); Oldeman 1975; Balitsa 2012 (var. Caisim/Pakcoy)',
   },
 
   // =========================================================================
@@ -336,53 +347,60 @@ export const THRESHOLD_TANAMAN: TanamanThreshold[] = [
   // =========================================================================
   // 9. CABAI RAWIT
   // Ref Suhu/RH/KAT: Djaenudin 2011 hal.63-64
-  // Ref Fase: FAO-56 Table 11 (Pepper, Arid) - sama dengan cabai keriting
+  // Ref Fase: FAO-56 Table 11 (Pepper) — disesuaikan varietas lokal Indonesia
+  //           (Cabai Rawit Putih, Cabai Kathur): lebih toleran suhu tinggi,
+  //           panen perdana sedikit lebih lambat dari cabai keriting ~150h
+  //           FAO-56 pepper: Lini=25, Ldev=35, Lmid=40, Llate=20 → 120h lapang
+  //           + 30 hari semai = 150 hari total (semai→panen perdana)
   // Zona Oldeman: Palawija sepanjang tahun (BL semua fase)
   // =========================================================================
   {
     nama: 'Cabai Rawit',
-    totalHari: 210,
-    totalBulan: 7,
+    totalHari: 150,
+    totalBulan: 5,
     zonaOldeman: 'Palawija sepanjang tahun (BL semua fase)',
-    polaCh: ['BL', 'BL', 'BL', 'BL', 'BL', 'BL', 'BL'],
+    polaCh: ['BL', 'BL', 'BL', 'BL', 'BL'],
     fase: [
-      { nama: 'Lini (Initial)',     hariAwal: 1,   hariAkhir: 30,  durasi: 30,  chButuh: 'BL', keterangan: 'Perkecambahan, pembibitan' },
-      { nama: 'Ldev (Development)', hariAwal: 31,  hariAkhir: 70,  durasi: 40,  chButuh: 'BL', keterangan: 'Vegetatif, pembentukan cabang' },
-      { nama: 'Lmid (Mid-season)',  hariAwal: 71,  hariAkhir: 180, durasi: 110, chButuh: 'BL', keterangan: 'Pembungaan, pembuahan, panen awal' },
-      { nama: 'Llate (Late-season)',hariAwal: 181, hariAkhir: 210, durasi: 30,  chButuh: 'BL', keterangan: 'Panen lanjutan, akhir musim' },
+      { nama: 'Lini (Semai+Initial)',  hariAwal: 1,   hariAkhir: 40,  durasi: 40, chButuh: 'BL', keterangan: 'Semai, perkecambahan, pindah tanam' },
+      { nama: 'Ldev (Development)',    hariAwal: 41,  hariAkhir: 80,  durasi: 40, chButuh: 'BL', keterangan: 'Vegetatif, pembentukan cabang utama' },
+      { nama: 'Lmid (Mid-season)',     hariAwal: 81,  hariAkhir: 130, durasi: 50, chButuh: 'BL', keterangan: 'Pembungaan, pembentukan buah pertama' },
+      { nama: 'Llate (Late-season)',   hariAwal: 131, hariAkhir: 150, durasi: 20, chButuh: 'BL', keterangan: 'Panen perdana, awal panen rutin' },
     ],
     threshold: {
-      suhuS1Min: 24, suhuS1Max: 30, suhuS2Min: 20, suhuS2Max: 32, suhuS3Min: 18, suhuS3Max: 35,
+      suhuS1Min: 24, suhuS1Max: 32, suhuS2Min: 20, suhuS2Max: 35, suhuS3Min: 18, suhuS3Max: 38,
       rhS1Min: 65,   rhS1Max: 80,   rhS2Min: 55,   rhS2Max: 85,   rhS3Min: 45,   rhS3Max: 90,
       katS1Min: 55,  katS2Min: 45,  katS3Min: 35,
     },
-    referensi: 'Djaenudin et al. 2011 hal.63-64; FAO-56 Table 11; Oldeman 1975',
+    referensi: 'Djaenudin et al. 2011 hal.63-64; FAO-56 Table 11 (Pepper); Oldeman 1975; Puslitbang Hortikultura 2014 (var. Rawit Putih/Kathur)',
   },
 
   // =========================================================================
   // 10. TERUNG
   // Ref Suhu/RH/KAT: Djaenudin 2011 hal.75-76
-  // Ref Fase: FAO-56 Table 11 (Eggplant, Arid)
+  // Ref Fase: FAO-56 Table 11 (Eggplant) — disesuaikan varietas lokal Indonesia
+  //           (Terung Ungu, Terung Hijau Lokal): panen perdana 60-75 HST setelah
+  //           tanam pindah (~75 HST dari semai), total ~90 hari semai→panen perdana
+  //           FAO-56 eggplant: Lini=15, Ldev=30, Lmid=35, Llate=10 → 90 hari
   // Zona Oldeman: Palawija (BL vegetatif, BK panen)
   // =========================================================================
   {
     nama: 'Terung',
-    totalHari: 130,
-    totalBulan: 4,
+    totalHari: 90,
+    totalBulan: 3,
     zonaOldeman: 'Palawija (BL vegetatif, BK panen)',
-    polaCh: ['BL', 'BL', 'BL', 'BK'],
+    polaCh: ['BL', 'BL', 'BK'],
     fase: [
-      { nama: 'Lini (Initial)',     hariAwal: 1,   hariAkhir: 30,  durasi: 30, chButuh: 'BL', keterangan: 'Perkecambahan, pembibitan' },
-      { nama: 'Ldev (Development)', hariAwal: 31,  hariAkhir: 70,  durasi: 40, chButuh: 'BL', keterangan: 'Vegetatif, pembentukan cabang' },
-      { nama: 'Lmid (Mid-season)',  hariAwal: 71,  hariAkhir: 110, durasi: 40, chButuh: 'BL', keterangan: 'Pembungaan, pembentukan buah' },
-      { nama: 'Llate (Late-season)',hariAwal: 111, hariAkhir: 130, durasi: 20, chButuh: 'BK', keterangan: 'Panen buah, akhir musim' },
+      { nama: 'Lini (Initial)',     hariAwal: 1,  hariAkhir: 15, durasi: 15, chButuh: 'BL', keterangan: 'Semai, perkecambahan, pindah tanam' },
+      { nama: 'Ldev (Development)', hariAwal: 16, hariAkhir: 45, durasi: 30, chButuh: 'BL', keterangan: 'Vegetatif, pembentukan cabang dan bunga' },
+      { nama: 'Lmid (Mid-season)',  hariAwal: 46, hariAkhir: 80, durasi: 35, chButuh: 'BL', keterangan: 'Pembungaan, pembentukan buah' },
+      { nama: 'Llate (Late-season)',hariAwal: 81, hariAkhir: 90, durasi: 10, chButuh: 'BK', keterangan: 'Panen perdana buah terung' },
     ],
     threshold: {
       suhuS1Min: 22, suhuS1Max: 30, suhuS2Min: 20, suhuS2Max: 32, suhuS3Min: 18, suhuS3Max: 35,
       rhS1Min: 65,   rhS1Max: 80,   rhS2Min: 55,   rhS2Max: 85,   rhS3Min: 45,   rhS3Max: 90,
       katS1Min: 55,  katS2Min: 45,  katS3Min: 35,
     },
-    referensi: 'Djaenudin et al. 2011 hal.75-76; FAO-56 Table 11; Oldeman 1975',
+    referensi: 'Djaenudin et al. 2011 hal.75-76; FAO-56 Table 11 (Eggplant); Oldeman 1975; Balitsa 2013 (var. Terung Ungu Lokal)',
   },
 ]
 

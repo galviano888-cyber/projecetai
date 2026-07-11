@@ -194,51 +194,69 @@ function evaluasiKat(kat: number | undefined, t: TanamanThreshold['threshold']):
  * CF[evidence] bertingkat sesuai derajat kecocokan fakta terhadap syarat
  * tumbuh (hasil evaluasi kelas kesesuaian lahan Djaenudin 2011 / Oldeman 1975).
  *
- *   S1 (Sangat Sesuai)  → 1.0  (bukti mendukung penuh)
- *   S2 (Cukup Sesuai)   → 0.6  (bukti mendukung sebagian)
- *   S3 (Marginal)       → 0.3  (bukti lemah)
- *   N  (Tidak Sesuai)   → -1.0 (bukti menolak)
+ *   S1 (Sangat Sesuai)  →  1.0  (bukti mendukung penuh)
+ *   S2 (Cukup Sesuai)   →  0.6  (bukti mendukung sebagian)
+ *   S3 (Marginal)       →  0.3  (bukti lemah)
+ *   N  (Tidak Sesuai)   → -0.8  (bukti menolak kuat, bukan absolut)
  *
- * Ref: skala derajat keyakinan bukti pada Certainty Factor
- * (Shortliffe & Buchanan, 1975), disesuaikan dengan kelas kesesuaian lahan.
+ * N diubah dari -1.0 ke -0.8 agar proporsional dengan skala positif.
+ * Nilai -1.0 terlalu ekstrem — satu parameter N langsung mendominasi
+ * seluruh fase meskipun 3 parameter lain mendukung penuh (S1).
+ * Dalam MYCIN (Shortliffe & Buchanan 1975), nilai -1.0 dipakai hanya
+ * untuk kondisi yang bersifat mematikan (lethal), bukan sekadar di luar
+ * rentang optimal. Untuk evaluasi kesesuaian lahan, -0.8 lebih tepat.
+ *
+ * Ref: Shortliffe & Buchanan (1975); Djaenudin et al. (2011).
  */
 const CF_EVIDENCE_KELAS: Record<KelasKesesuaian, number> = {
-  S1: 1.0,
-  S2: 0.6,
-  S3: 0.3,
-  N: -1.0,
+  S1:  1.0,
+  S2:  0.6,
+  S3:  0.3,
+  N:  -0.8,
 }
 
 /**
  * CF satu parameter = CF[rule] (keyakinan pakar) × CF[evidence] (derajat
- * kecocokan fakta). Rentang -CF[rule] .. +CF[rule].
+ * kecocokan fakta). Rentang -CF[rule]×0.8 .. +CF[rule].
  */
 function cfParameter(kelas: KelasKesesuaian, cfRule: number): number {
   return cfRule * CF_EVIDENCE_KELAS[kelas]
 }
 
 /**
- * CF gabungan satu fase = rata-rata berbobot CF tiap parameter, dengan
- * bobot = CF[rule] parameter tersebut. Parameter yang lebih kritis (CH)
- * memberi kontribusi lebih besar.
+ * CF gabungan satu fase = rata-rata berbobot CF[evidence] tiap parameter,
+ * lalu dikalikan rata-rata berbobot CF[rule].
  *
- * Rumus: sum(cf_i × bobot_i) / sum(bobot_i)
- * di mana cf_i = CF[rule]_i × CF[evidence]_i (sudah dihitung di cfParameter),
- * dan bobot_i = CF[rule]_i.
+ * Perbaikan dari versi sebelumnya yang menggunakan:
+ *   sum(cf_i × bobot_i) / sum(bobot_i)
+ * di mana cf_i = cfRule_i × CF_EVIDENCE_i.
+ * Rumus lama menyebabkan bobot efektif = cfRule_i² (over-weighting).
  *
- * Tidak memakai penjumlahan MYCIN agar nilai tidak jenuh ke 1.0 dan tetap
- * proporsional terhadap derajat kecocokan tiap parameter.
+ * Rumus yang benar:
+ *   cfFase = [sum(CF_EVIDENCE_i × bobot_i) / sum(bobot_i)]
+ *            × [sum(cfRule_i × bobot_i) / sum(bobot_i)]
  *
- * Ref: weighted average CF — Shortliffe & Buchanan (1975), adaptasi
- * kesesuaian lahan Djaenudin et al. (2011).
+ * Dengan bobot_i = cfRule_i (kepentingan parameter menurut pakar), maka:
+ *   - CF_EVIDENCE di-average berbobot → mencerminkan derajat kecocokan aktual
+ *   - cfRule di-average berbobot → mencerminkan keyakinan pakar rata-rata
+ *   - Keduanya dikalikan → CF akhir proporsional, tidak over-weight parameter manapun
+ *
+ * Tidak memakai penjumlahan MYCIN antar parameter agar nilai tidak jenuh ke 1.0.
+ * Ref: Shortliffe & Buchanan (1975); adaptasi kesesuaian lahan Djaenudin et al. (2011).
  */
 function cfGabunganFase(
-  cfParams: { cf: number; bobot: number }[]
+  cfParams: { cf: number; bobot: number; evidence: number }[]
 ): number {
   const totalBobot = cfParams.reduce((s, p) => s + p.bobot, 0)
   if (totalBobot === 0) return 0
-  // Weighted average: sum(cf × bobot) / sum(bobot)
-  return cfParams.reduce((s, p) => s + p.cf * p.bobot, 0) / totalBobot
+
+  // Rata-rata berbobot CF[evidence] — derajat kecocokan aktual kondisi iklim
+  const avgEvidence = cfParams.reduce((s, p) => s + p.evidence * p.bobot, 0) / totalBobot
+
+  // Rata-rata berbobot CF[rule] — keyakinan pakar terhadap parameter
+  const avgRule = cfParams.reduce((s, p) => s + p.bobot * p.bobot, 0) / totalBobot
+
+  return avgEvidence * avgRule
 }
 
 /**
@@ -342,12 +360,13 @@ export function hitungKalenderTanam(
     const cfRh   = cfParameter(kelasRh,   cfRule.rh)
     const cfKat  = cfParameter(kelasKat,  cfRule.kat)
 
-    // CF gabungan fase = rata-rata berbobot CF 4 parameter (bobot = CF[rule])
+    // CF gabungan fase = rata-rata berbobot CF[evidence] × rata-rata berbobot CF[rule]
+    // evidence dipisah dari cf agar bobot efektif = cfRule (bukan cfRule²)
     const cfFase = cfGabunganFase([
-      { cf: cfCh,   bobot: cfRule.ch },
-      { cf: cfSuhu, bobot: cfRule.suhu },
-      { cf: cfRh,   bobot: cfRule.rh },
-      { cf: cfKat,  bobot: cfRule.kat },
+      { cf: cfCh,   bobot: cfRule.ch,   evidence: CF_EVIDENCE_KELAS[kelasCh] },
+      { cf: cfSuhu, bobot: cfRule.suhu, evidence: CF_EVIDENCE_KELAS[kelasSuhu] },
+      { cf: cfRh,   bobot: cfRule.rh,   evidence: CF_EVIDENCE_KELAS[kelasRh] },
+      { cf: cfKat,  bobot: cfRule.kat,  evidence: CF_EVIDENCE_KELAS[kelasKat] },
     ])
     cfFaseList.push(cfFase)
 

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { ClimateData } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -49,7 +49,9 @@ export default function AdminIklim() {
   const [dataTotal, setDataTotal] = useState(0)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
-  async function fetchExistingData(page = dataPage) {
+  // useCallback agar fetchExistingData stabil — tidak dibuat ulang setiap render,
+  // sehingga useEffect di bawah tidak loop dan handler lain tidak pakai closure lama.
+  const fetchExistingData = useCallback(async (page: number) => {
     setDataLoading(true)
     const from = (page - 1) * PAGE_SIZE
     const to = from + PAGE_SIZE - 1
@@ -63,11 +65,11 @@ export default function AdminIklim() {
     setExistingData((data as ClimateData[]) ?? [])
     setDataTotal(count ?? 0)
     setDataLoading(false)
-  }
+  }, [])
 
   useEffect(() => {
     if (activeTab === 'data') fetchExistingData(dataPage)
-  }, [activeTab, dataPage])
+  }, [activeTab, dataPage, fetchExistingData])
 
   function openEdit(row: ClimateData) {
     setEditingId(row.id ?? null)
