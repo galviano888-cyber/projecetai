@@ -309,16 +309,6 @@ export default function LandingPage() {
             </div>
           )}
 
-          {/* Climate Charts */}
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <BarChart2 className="size-4 text-agri-green" />
-              <h3 className="text-base font-semibold text-foreground">Grafik Iklim Bulanan</h3>
-              {climateLoading && <span className="text-xs text-muted-foreground animate-pulse">Memuat data...</span>}
-            </div>
-            <ClimateCharts data={chartData} />
-          </div>
-
           {/* Rekomendasi Sistem Pakar */}
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-2">
@@ -336,12 +326,22 @@ export default function LandingPage() {
           </div>
 
           {/* Planting Calendar */}
-          <div>
+          <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
               <CalendarDays className="size-4 text-agri-green" />
               <h3 className="text-base font-semibold text-foreground">Kalender Tanam Komoditas</h3>
             </div>
             <KalenderTanamView defaultYear={selectedYear} />
+          </div>
+
+          {/* Climate Charts */}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart2 className="size-4 text-agri-green" />
+              <h3 className="text-base font-semibold text-foreground">Grafik Iklim Bulanan</h3>
+              {climateLoading && <span className="text-xs text-muted-foreground animate-pulse">Memuat data...</span>}
+            </div>
+            <ClimateCharts data={chartData} />
           </div>
         </div>
       </section>
