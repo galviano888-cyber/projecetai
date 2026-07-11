@@ -225,21 +225,20 @@ function cfParameter(kelas: KelasKesesuaian, cfRule: number): number {
 
 /**
  * CF gabungan satu fase = rata-rata berbobot CF[evidence] tiap parameter,
- * lalu dikalikan rata-rata berbobot CF[rule].
+ * dengan bobot = CF[rule] parameter tersebut.
  *
- * Perbaikan dari versi sebelumnya yang menggunakan:
- *   sum(cf_i × bobot_i) / sum(bobot_i)
- * di mana cf_i = cfRule_i × CF_EVIDENCE_i.
- * Rumus lama menyebabkan bobot efektif = cfRule_i² (over-weighting).
+ * Rumus: cfFase = sum(CF_EVIDENCE_i × cfRule_i) / sum(cfRule_i)
  *
- * Rumus yang benar:
- *   cfFase = [sum(CF_EVIDENCE_i × bobot_i) / sum(bobot_i)]
- *            × [sum(cfRule_i × bobot_i) / sum(bobot_i)]
+ * Ini adalah weighted average murni di mana:
+ *   - CF_EVIDENCE_i adalah derajat kecocokan aktual (S1=1.0, S2=0.6, S3=0.3, N=-0.8)
+ *   - cfRule_i adalah bobot kepentingan parameter menurut pakar (CH=0.9, dst)
+ *   - Nilai akhir berada di rentang [-0.8, 1.0]
  *
- * Dengan bobot_i = cfRule_i (kepentingan parameter menurut pakar), maka:
- *   - CF_EVIDENCE di-average berbobot → mencerminkan derajat kecocokan aktual
- *   - cfRule di-average berbobot → mencerminkan keyakinan pakar rata-rata
- *   - Keduanya dikalikan → CF akhir proporsional, tidak over-weight parameter manapun
+ * Rentang hasil dan pemetaan ke label:
+ *   Semua S1 → cfFase = 1.0    → "cocok"
+ *   Semua S2 → cfFase = 0.6    → "cukup"
+ *   Semua S3 → cfFase = 0.3    → "tidak"
+ *   Semua N  → cfFase = -0.8   → "tidak"
  *
  * Tidak memakai penjumlahan MYCIN antar parameter agar nilai tidak jenuh ke 1.0.
  * Ref: Shortliffe & Buchanan (1975); adaptasi kesesuaian lahan Djaenudin et al. (2011).
@@ -250,13 +249,9 @@ function cfGabunganFase(
   const totalBobot = cfParams.reduce((s, p) => s + p.bobot, 0)
   if (totalBobot === 0) return 0
 
-  // Rata-rata berbobot CF[evidence] — derajat kecocokan aktual kondisi iklim
-  const avgEvidence = cfParams.reduce((s, p) => s + p.evidence * p.bobot, 0) / totalBobot
-
-  // Rata-rata berbobot CF[rule] — keyakinan pakar terhadap parameter
-  const avgRule = cfParams.reduce((s, p) => s + p.bobot * p.bobot, 0) / totalBobot
-
-  return avgEvidence * avgRule
+  // Weighted average CF[evidence] dengan bobot = cfRule
+  // sum(evidence_i × cfRule_i) / sum(cfRule_i)
+  return cfParams.reduce((s, p) => s + p.evidence * p.bobot, 0) / totalBobot
 }
 
 /**
@@ -360,14 +355,22 @@ export function hitungKalenderTanam(
     const cfRh   = cfParameter(kelasRh,   cfRule.rh)
     const cfKat  = cfParameter(kelasKat,  cfRule.kat)
 
-    // CF gabungan fase = rata-rata berbobot CF[evidence] × rata-rata berbobot CF[rule]
-    // evidence dipisah dari cf agar bobot efektif = cfRule (bukan cfRule²)
-    const cfFase = cfGabunganFase([
+    // CF gabungan fase = rata-rata berbobot CF[evidence] dengan bobot = cfRule
+    let cfFase = cfGabunganFase([
       { cf: cfCh,   bobot: cfRule.ch,   evidence: CF_EVIDENCE_KELAS[kelasCh] },
       { cf: cfSuhu, bobot: cfRule.suhu, evidence: CF_EVIDENCE_KELAS[kelasSuhu] },
       { cf: cfRh,   bobot: cfRule.rh,   evidence: CF_EVIDENCE_KELAS[kelasRh] },
       { cf: cfKat,  bobot: cfRule.kat,  evidence: CF_EVIDENCE_KELAS[kelasKat] },
     ])
+
+    // ─── Hukum Faktor Pembatas Air (Liebig/Oldeman) ───────────────────────────
+    // CH adalah faktor pembatas primer dalam agroklimatologi (Oldeman 1975).
+    // Jika kebutuhan CH fase tidak terpenuhi (kelasCh = N), tanaman tidak
+    // dapat tumbuh terlepas kondisi suhu/RH/KAT sebaik apapun.
+    // Cap cfFase maksimal 0.39 ("tidak") saat CH = N.
+    if (kelasCh === 'N') {
+      cfFase = Math.min(cfFase, 0.39)
+    }
     cfFaseList.push(cfFase)
 
     detail.push({
