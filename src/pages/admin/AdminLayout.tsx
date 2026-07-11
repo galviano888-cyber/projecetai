@@ -139,13 +139,7 @@ export default function AdminLayout() {
             <p className="text-[11px] text-muted-foreground">Kelola data iklim, threshold &amp; kalender tanam</p>
           </div>
           <div className="flex-1" />
-          <div className="flex items-center gap-2 rounded-full bg-agri-green/10 px-3 py-1.5">
-            <span className="relative flex size-2 items-center justify-center">
-              <span className="absolute size-full rounded-full bg-agri-green animate-ping opacity-60" />
-              <span className="relative size-1.5 rounded-full bg-agri-green" />
-            </span>
-            <span className="text-xs font-medium text-agri-green-dark hidden sm:inline">Sistem Aktif</span>
-          </div>
+
         </header>
 
         {/* Page content */}

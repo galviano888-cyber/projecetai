@@ -515,10 +515,7 @@ export default function LandingPage() {
             <p className="text-sm text-white/60 text-center sm:text-left">
               &copy; 2026 Dikembangkan oleh <span className="font-semibold text-agri-yellow">Galih Oktaviano</span> | AgroDemak
             </p>
-            <div className="flex items-center gap-1.5">
-              <span className="size-2 rounded-full bg-agri-yellow animate-pulse" />
-              <span className="text-xs text-white/50">Sistem Aktif</span>
-            </div>
+
           </div>
         </div>
       </footer>
