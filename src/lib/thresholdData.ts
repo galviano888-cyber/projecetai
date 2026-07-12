@@ -120,8 +120,10 @@ export const DEFAULT_CF_RULE: CfRule = {
 
 // CATATAN: CF[evidence] (derajat keyakinan fakta terhadap syarat tumbuh)
 // didefinisikan bertingkat per kelas kesesuaian di engine (kalenderTanam.ts):
-//   S1=1.0, S2=0.6, S3=0.3, N=-1.0
+//   S1=1.0, S2=0.6, S3=0.3, N=-0.8
 // sehingga fakta yang lebih sesuai memberi keyakinan lebih tinggi.
+// N=-0.8 (bukan -1.0) karena ketidaksesuaian agroklimat bersifat pembatas
+// parsial, bukan mematikan (lethal). Ref: Shortliffe & Buchanan 1975.
 
 // ─── Data Threshold 10 Tanaman ────────────────────────────────────────────────
 
