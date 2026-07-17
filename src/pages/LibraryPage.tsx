@@ -74,7 +74,7 @@ export default function LibraryPage() {
   )
 
   // Hitung CF kecocokan komoditas di halaman aktif (jika tanam bulan ini)
-  // Hanya tanaman yang ada di knowledge base (10 tanaman) yang dapat nilai.
+  // Hanya tanaman yang ada di knowledge base (4 komoditas tervalidasi) yang dapat nilai.
   const namaPaginated = useMemo(() => paginated.map(c => c.nama), [paginated])
   const bulanSekarang = currentClimate?.bulan ?? new Date().getMonth() + 1
   const tahunSekarang = currentClimate?.tahun ?? new Date().getFullYear()
