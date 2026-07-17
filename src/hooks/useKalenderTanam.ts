@@ -56,6 +56,14 @@ async function fetchThreshold(): Promise<TanamanThreshold[]> {
 
   if (error || !data || data.length === 0) return THRESHOLD_TANAMAN
 
+  // Jika DB tidak memiliki semua komoditas yang diperlukan, gunakan hardcoded
+  const namaDB = data.map((d: { nama_tanaman: string }) => d.nama_tanaman)
+  const semuaAda = namaValid.every(nama => namaDB.includes(nama))
+  if (!semuaAda) {
+    console.log('[Kalender] DB threshold tidak lengkap, gunakan hardcoded')
+    return THRESHOLD_TANAMAN
+  }
+
   try {
     return data.map((d: {
       nama_tanaman: string
