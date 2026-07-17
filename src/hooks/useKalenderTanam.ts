@@ -52,45 +52,53 @@ async function fetchThreshold(): Promise<TanamanThreshold[]> {
 
   if (error || !data || data.length === 0) return THRESHOLD_TANAMAN
 
-  return data.map((d: {
-    nama_tanaman: string
-    total_hari: number
-    total_bulan: number
-    pola_ch: string
-    suhu_s1_min: number; suhu_s1_max: number
-    suhu_s2_min: number; suhu_s2_max: number
-    suhu_s3_min: number; suhu_s3_max: number
-    rh_s1_min: number; rh_s1_max: number
-    rh_s2_min: number; rh_s2_max: number
-    rh_s3_min: number; rh_s3_max: number
-    kat_s1_min: number; kat_s2_min: number; kat_s3_min: number
-    referensi?: string
-  }): TanamanThreshold => {
-    // Cari data fase dari THRESHOLD_TANAMAN hardcoded (FAO-56)
-    const base = THRESHOLD_TANAMAN.find(t => t.nama === d.nama_tanaman)
-    const polaCh = d.pola_ch.split(',').map(s => s.trim() as OldemanKelas)
+  try {
+    return data.map((d: {
+      nama_tanaman: string
+      total_hari: number
+      total_bulan: number
+      pola_ch: string
+      suhu_s1_min: number; suhu_s1_max: number
+      suhu_s2_min: number; suhu_s2_max: number
+      suhu_s3_min: number; suhu_s3_max: number
+      rh_s1_min: number; rh_s1_max: number
+      rh_s2_min: number; rh_s2_max: number
+      rh_s3_min: number; rh_s3_max: number
+      kat_s1_min: number; kat_s2_min: number; kat_s3_min: number
+      referensi?: string
+    }): TanamanThreshold => {
+      // Cari data fase dari THRESHOLD_TANAMAN hardcoded (FAO-56)
+      const base = THRESHOLD_TANAMAN.find(t => t.nama === d.nama_tanaman)
+      // Guard: pola_ch bisa null/undefined dari DB
+      const polaCh = d.pola_ch
+        ? d.pola_ch.split(',').map(s => s.trim() as OldemanKelas)
+        : (base?.polaCh ?? [])
 
-    return {
-      nama: d.nama_tanaman,
-      totalHari: d.total_hari,
-      totalBulan: d.total_bulan,
-      zonaOldeman: base?.zonaOldeman ?? '',
-      polaCh,
-      fase: base?.fase ?? [],
-      threshold: {
-        suhuS1Min: d.suhu_s1_min, suhuS1Max: d.suhu_s1_max,
-        suhuS2Min: d.suhu_s2_min, suhuS2Max: d.suhu_s2_max,
-        suhuS3Min: d.suhu_s3_min, suhuS3Max: d.suhu_s3_max,
-        rhS1Min: d.rh_s1_min,   rhS1Max: d.rh_s1_max,
-        rhS2Min: d.rh_s2_min,   rhS2Max: d.rh_s2_max,
-        rhS3Min: d.rh_s3_min,   rhS3Max: d.rh_s3_max,
-        katS1Min: d.kat_s1_min,
-        katS2Min: d.kat_s2_min,
-        katS3Min: d.kat_s3_min,
-      },
-      referensi: d.referensi ?? base?.referensi ?? '',
-    }
-  })
+      return {
+        nama: d.nama_tanaman,
+        totalHari: d.total_hari ?? base?.totalHari ?? 0,
+        totalBulan: d.total_bulan ?? base?.totalBulan ?? 0,
+        zonaOldeman: base?.zonaOldeman ?? '',
+        polaCh,
+        fase: base?.fase ?? [],
+        threshold: {
+          suhuS1Min: d.suhu_s1_min, suhuS1Max: d.suhu_s1_max,
+          suhuS2Min: d.suhu_s2_min, suhuS2Max: d.suhu_s2_max,
+          suhuS3Min: d.suhu_s3_min, suhuS3Max: d.suhu_s3_max,
+          rhS1Min: d.rh_s1_min,   rhS1Max: d.rh_s1_max,
+          rhS2Min: d.rh_s2_min,   rhS2Max: d.rh_s2_max,
+          rhS3Min: d.rh_s3_min,   rhS3Max: d.rh_s3_max,
+          katS1Min: d.kat_s1_min,
+          katS2Min: d.kat_s2_min,
+          katS3Min: d.kat_s3_min,
+        },
+        referensi: d.referensi ?? base?.referensi ?? '',
+      }
+    })
+  } catch (err) {
+    console.error('fetchThreshold: error parsing DB data, fallback ke hardcoded:', err)
+    return THRESHOLD_TANAMAN
+  }
 }
 
 /**
