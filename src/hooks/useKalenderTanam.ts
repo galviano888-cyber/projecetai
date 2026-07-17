@@ -45,9 +45,13 @@ async function fetchCfRule(): Promise<CfRule> {
  * fase adalah konstanta ilmiah, bukan parameter yang perlu diubah admin.
  */
 async function fetchThreshold(): Promise<TanamanThreshold[]> {
+  // Nama komoditas yang valid di sistem (4 komoditas tervalidasi)
+  const namaValid = THRESHOLD_TANAMAN.map(t => t.nama)
+
   const { data, error } = await supabase
     .from('threshold_tanaman')
     .select('*')
+    .in('nama_tanaman', namaValid)
     .order('nama_tanaman')
 
   if (error || !data || data.length === 0) return THRESHOLD_TANAMAN
