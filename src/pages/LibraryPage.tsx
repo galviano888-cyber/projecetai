@@ -5,12 +5,16 @@ import type { Commodity, Library } from '@/lib/supabase'
 import { useCurrentClimate } from '@/contexts/ClimateContext'
 import { useCfTanamanBatch } from '@/hooks/useKalenderTanam'
 import { LABEL_USER_TEKS, type LabelUser } from '@/lib/kalenderTanam'
+import { THRESHOLD_TANAMAN } from '@/lib/thresholdData'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
   Sprout, Search, Leaf, CloudRain, Sun, Wind,
   ChevronRight, BookOpen, ChevronLeft, ArrowLeft
 } from 'lucide-react'
+
+// Nama komoditas yang ada di knowledge base (4 komoditas tervalidasi)
+const KOMODITAS_AKTIF = new Set(THRESHOLD_TANAMAN.map(t => t.nama))
 
 const PAGE_SIZE = 6
 
@@ -45,7 +49,9 @@ export default function LibraryPage() {
         supabase.from('library').select('commodity_id'),
       ])
       if (cancelled) return
-      setCommodities((comms as Commodity[]) ?? [])
+      // Filter hanya komoditas yang ada di knowledge base (4 komoditas tervalidasi)
+      const filtered = ((comms as Commodity[]) ?? []).filter(c => KOMODITAS_AKTIF.has(c.nama))
+      setCommodities(filtered)
       const libMap: Record<string, Library> = {}
       ;((libs as Library[]) ?? []).forEach(l => { if (l.commodity_id) libMap[l.commodity_id] = l })
       setLibraries(libMap)

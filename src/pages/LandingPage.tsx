@@ -201,7 +201,7 @@ export default function LandingPage() {
 
           <div className="mt-14 grid grid-cols-3 gap-3 sm:gap-4 max-w-xl mx-auto animate-fade-up" style={{ animationDelay: '240ms' }}>
             {[
-              { value: "10", label: "Komoditas Unggulan" },
+              { value: "4", label: "Komoditas Tervalidasi" },
               { value: "BMKG", label: "Sumber Data Iklim" },
               { value: "CF", label: "Metode Sistem Pakar" },
             ].map((stat) => (

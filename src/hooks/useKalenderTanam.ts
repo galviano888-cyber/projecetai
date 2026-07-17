@@ -172,7 +172,8 @@ export function useKalenderTanam(tahun: number) {
         if (cancelled) return
         setIklim(iklimList)
         setHasil(hitungKalenderTanamLengkap(tahun, iklimList, cfRule, thresholdList))
-      } catch {
+      } catch (err) {
+        console.error('Error useKalenderTanam:', err)
         if (!cancelled) setError('Gagal memuat data kalender tanam.')
       } finally {
         if (!cancelled) setLoading(false)
