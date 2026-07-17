@@ -112,6 +112,34 @@ export default function AdminThreshold() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
+
+    // Validasi input sebelum simpan ke DB
+    const errors: string[] = []
+    if (!form.nama_tanaman.trim()) errors.push('Nama tanaman wajib diisi.')
+    if (form.total_hari <= 0) errors.push('Total hari harus lebih dari 0.')
+    if (form.total_bulan <= 0) errors.push('Total bulan harus lebih dari 0.')
+    if (!form.pola_ch.trim()) errors.push('Pola CH wajib diisi (contoh: BB,BL,BK).')
+    const validOldeman = /^(BB|BL|BK)(,(BB|BL|BK))*$/
+    if (form.pola_ch && !validOldeman.test(form.pola_ch.trim())) {
+      errors.push('Pola CH harus berisi BB, BL, atau BK dipisah koma (contoh: BB,BL,BK).')
+    }
+    if (form.suhu_s1_min >= form.suhu_s1_max) errors.push('Suhu S1: nilai minimum harus lebih kecil dari maksimum.')
+    if (form.suhu_s2_min >= form.suhu_s2_max) errors.push('Suhu S2: nilai minimum harus lebih kecil dari maksimum.')
+    if (form.suhu_s3_min >= form.suhu_s3_max) errors.push('Suhu S3: nilai minimum harus lebih kecil dari maksimum.')
+    if (form.rh_s1_min >= form.rh_s1_max) errors.push('RH S1: nilai minimum harus lebih kecil dari maksimum.')
+    if (form.rh_s2_min >= form.rh_s2_max) errors.push('RH S2: nilai minimum harus lebih kecil dari maksimum.')
+    if (form.rh_s3_min >= form.rh_s3_max) errors.push('RH S3: nilai minimum harus lebih kecil dari maksimum.')
+    if (form.kat_s1_min <= 0 || form.kat_s1_min > 100) errors.push('KAT S1 harus antara 1-100.')
+    if (form.kat_s2_min <= 0 || form.kat_s2_min > 100) errors.push('KAT S2 harus antara 1-100.')
+    if (form.kat_s3_min <= 0 || form.kat_s3_min > 100) errors.push('KAT S3 harus antara 1-100.')
+    if (form.kat_s1_min <= form.kat_s2_min) errors.push('KAT S1 harus lebih besar dari KAT S2.')
+    if (form.kat_s2_min <= form.kat_s3_min) errors.push('KAT S2 harus lebih besar dari KAT S3.')
+
+    if (errors.length > 0) {
+      showToast('error', errors[0])
+      return
+    }
+
     setSaving(true)
 
     const payload = { ...form }
@@ -148,7 +176,7 @@ export default function AdminThreshold() {
             <FlaskConical className="size-5 text-agri-green" /> Threshold Tanaman
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Kelola threshold parameter agroklimat per tanaman berbasis Oldeman (1975) &amp; Djaenudin et al. (2011).
+            Kelola threshold parameter agroklimat per tanaman berbasis Oldeman (1975) &amp; Ritung et al. (2011).
           </p>
         </div>
         {!showForm && (
@@ -167,7 +195,7 @@ export default function AdminThreshold() {
         <div>
           <span className="font-semibold">Referensi threshold:</span>{' '}
           Oldeman (1975) untuk klasifikasi CH (BB/BL/BK);
-          Djaenudin et al. (2011) untuk suhu, RH, KAT;
+          Ritung et al. (2011) untuk suhu, RH, KAT;
           Allen et al. (1998) FAO-56 Table 11 untuk fase &amp; durasi tumbuh.
           Pola CH diisi dengan format: <code className="bg-blue-100 px-1 rounded">BB,BB,BL,BL,BK</code>
         </div>
@@ -246,7 +274,7 @@ export default function AdminThreshold() {
               {/* Threshold Suhu */}
               <fieldset className="space-y-3">
                 <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                  Threshold Suhu (°C) — Djaenudin et al. 2011
+                   Threshold Suhu (°C) — Ritung et al. 2011
                 </legend>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <ThresholdRow label="S1" minName="suhu_s1_min" maxName="suhu_s1_max" minVal={form.suhu_s1_min} maxVal={form.suhu_s1_max} onChange={handleChange} color="green" />
@@ -258,7 +286,7 @@ export default function AdminThreshold() {
               {/* Threshold RH */}
               <fieldset className="space-y-3">
                 <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                  Threshold Kelembaban RH (%) — Djaenudin et al. 2011
+                   Threshold Kelembaban RH (%) — Ritung et al. 2011
                 </legend>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <ThresholdRow label="S1" minName="rh_s1_min" maxName="rh_s1_max" minVal={form.rh_s1_min} maxVal={form.rh_s1_max} onChange={handleChange} color="green" />
@@ -270,7 +298,7 @@ export default function AdminThreshold() {
               {/* Threshold KAT */}
               <fieldset className="space-y-3">
                 <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                  Threshold KAT min (%) — Djaenudin et al. 2011
+                   Threshold KAT min (%) — Ritung et al. 2011
                 </legend>
                 <div className="grid grid-cols-3 gap-3">
                   <NInput name="kat_s1_min" label="KAT min S1" value={form.kat_s1_min} onChange={handleChange} type="number" />
@@ -287,7 +315,7 @@ export default function AdminThreshold() {
                   value={form.referensi ?? ''}
                   onChange={handleChange}
                   rows={2}
-                  placeholder="Djaenudin et al. 2011 hal.xx; FAO-56 Table 11; Oldeman 1975"
+                   placeholder="Ritung et al. 2011 hal.xx; FAO-56 Table 11; Oldeman 1975"
                   className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-agri-green focus-visible:ring-2 focus-visible:ring-agri-green/20 resize-none"
                 />
               </fieldset>

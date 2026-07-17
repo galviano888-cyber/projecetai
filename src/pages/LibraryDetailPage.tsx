@@ -313,7 +313,7 @@ export default function LibraryDetailPage() {
 
         {/* Sumber referensi */}
         <p className="text-[10px] text-muted-foreground text-center pb-4">
-          Syarat tumbuh bersumber dari: Djaenudin et al. (2011) Petunjuk Teknis Evaluasi Lahan, BBSDLP
+          Syarat tumbuh bersumber dari: Ritung et al. (2011) Petunjuk Teknis Evaluasi Lahan, BBSDLP
           &bull; Oldeman (1975) Klasifikasi Agroklimat &bull; FAO-56 Allen et al. (1998)
         </p>
 

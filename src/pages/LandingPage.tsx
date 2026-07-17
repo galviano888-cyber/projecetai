@@ -461,7 +461,7 @@ export default function LandingPage() {
             <div className="text-center sm:text-left">
               <p className="font-semibold text-foreground">Berbasis Referensi Ilmiah Terverifikasi</p>
               <p className="text-sm text-muted-foreground mt-0.5">
-                Basis aturan bersumber dari Oldeman (1975) untuk klasifikasi iklim, Djaenudin et al. (2011)
+                Basis aturan bersumber dari Oldeman (1975) untuk klasifikasi iklim, Ritung et al. (2011)
                 BBSDLP untuk evaluasi lahan, dan FAO-56 (Allen et al., 1998) untuk fase tumbuh tanaman.
               </p>
             </div>

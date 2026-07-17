@@ -200,7 +200,7 @@ export function RecommendationCard({ bulan, tahun, topN = 3 }: RecommendationCar
       {/* Disclaimer */}
       <p className="text-[10px] text-muted-foreground text-center">
         Metode: Sistem Pakar Forward Chaining + Certainty Factor (Shortliffe &amp; Buchanan, 1975).
-        Basis aturan: Oldeman (1975), Djaenudin et al. (2011), FAO-56 (Allen et al. 1998).
+        Basis aturan: Oldeman (1975), Ritung et al. (2011), FAO-56 (Allen et al. 1998).
       </p>
     </div>
   )

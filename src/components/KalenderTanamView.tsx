@@ -52,7 +52,7 @@ export function KalenderTanamView({ defaultYear }: Props) {
             <div>
               <CardTitle className="text-sm font-semibold">Kalender Tanam</CardTitle>
               <p className="text-xs text-muted-foreground">
-                Berdasarkan prediksi iklim BMKG &middot; Oldeman (1975) &amp; Djaenudin (2011)
+                Berdasarkan prediksi iklim BMKG &middot; Oldeman (1975) &amp; Ritung et al. (2011)
               </p>
             </div>
           </div>
@@ -184,7 +184,7 @@ export function KalenderTanamView({ defaultYear }: Props) {
           <Info className="inline size-3 mr-1 -mt-0.5" />
           Klik sel berwarna untuk melihat detail per fase tumbuh beserta nilai Certainty Factor (CF).
           Sistem menggunakan metode Sistem Pakar Forward Chaining + Certainty Factor (Shortliffe &amp;
-          Buchanan, 1975) dengan basis aturan threshold Oldeman (1975), Djaenudin (2011), dan FAO-56.
+          Buchanan, 1975) dengan basis aturan threshold Oldeman (1975), Ritung et al. (2011), dan FAO-56.
         </p>
       </div>
 

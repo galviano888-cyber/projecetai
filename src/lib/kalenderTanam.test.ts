@@ -126,12 +126,12 @@ describe('hitungKalenderTanam - hukum faktor pembatas', () => {
 
 // ─── Data tidak lengkap ─────────────────────────────────────────────────────────
 describe('hitungKalenderTanam - data tidak lengkap', () => {
-  const kedelai = THRESHOLD_TANAMAN.find(t => t.nama === 'Kedelai')!
+  const cabaiRawit = THRESHOLD_TANAMAN.find(t => t.nama === 'Cabai Rawit')!
 
   it('menandai dataLengkap=false bila ada bulan tanpa data', () => {
     // Hanya isi bulan 1, sisanya kosong
     const map = buatIklimMap([{ bulan: 1, tahun: 2026, ch_mm: 150, suhu: 27, kelembaban: 70, kat: 65 }])
-    const hasil = hitungKalenderTanam(kedelai, 1, 2026, map)
+    const hasil = hitungKalenderTanam(cabaiRawit, 1, 2026, map)
     expect(hasil.dataLengkap).toBe(false)
   })
 })

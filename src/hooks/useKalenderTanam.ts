@@ -7,7 +7,13 @@ import {
   type HasilKalenderTanam,
   type IklimBulan,
 } from '@/lib/kalenderTanam'
-import { DEFAULT_CF_RULE, type CfRule } from '@/lib/thresholdData'
+import {
+  DEFAULT_CF_RULE,
+  THRESHOLD_TANAMAN,
+  type CfRule,
+  type TanamanThreshold,
+  type OldemanKelas,
+} from '@/lib/thresholdData'
 
 /**
  * Ambil nilai CF[rule] dari tabel cf_rule di Supabase.
@@ -27,6 +33,64 @@ async function fetchCfRule(): Promise<CfRule> {
     rh:   map.rh   ?? DEFAULT_CF_RULE.rh,
     kat:  map.kat  ?? DEFAULT_CF_RULE.kat,
   }
+}
+
+/**
+ * Ambil threshold tanaman dari tabel threshold_tanaman di Supabase.
+ * Konversi dari format DB (snake_case) ke format engine (camelCase).
+ * Jika tabel kosong / gagal, fallback ke THRESHOLD_TANAMAN hardcoded.
+ *
+ * Catatan: fase tumbuh (Lini/Ldev/Lmid/Llate) tidak disimpan di DB —
+ * tetap menggunakan data FAO-56 Table 11 dari thresholdData.ts karena
+ * fase adalah konstanta ilmiah, bukan parameter yang perlu diubah admin.
+ */
+async function fetchThreshold(): Promise<TanamanThreshold[]> {
+  const { data, error } = await supabase
+    .from('threshold_tanaman')
+    .select('*')
+    .order('nama_tanaman')
+
+  if (error || !data || data.length === 0) return THRESHOLD_TANAMAN
+
+  return data.map((d: {
+    nama_tanaman: string
+    total_hari: number
+    total_bulan: number
+    pola_ch: string
+    suhu_s1_min: number; suhu_s1_max: number
+    suhu_s2_min: number; suhu_s2_max: number
+    suhu_s3_min: number; suhu_s3_max: number
+    rh_s1_min: number; rh_s1_max: number
+    rh_s2_min: number; rh_s2_max: number
+    rh_s3_min: number; rh_s3_max: number
+    kat_s1_min: number; kat_s2_min: number; kat_s3_min: number
+    referensi?: string
+  }): TanamanThreshold => {
+    // Cari data fase dari THRESHOLD_TANAMAN hardcoded (FAO-56)
+    const base = THRESHOLD_TANAMAN.find(t => t.nama === d.nama_tanaman)
+    const polaCh = d.pola_ch.split(',').map(s => s.trim() as OldemanKelas)
+
+    return {
+      nama: d.nama_tanaman,
+      totalHari: d.total_hari,
+      totalBulan: d.total_bulan,
+      zonaOldeman: base?.zonaOldeman ?? '',
+      polaCh,
+      fase: base?.fase ?? [],
+      threshold: {
+        suhuS1Min: d.suhu_s1_min, suhuS1Max: d.suhu_s1_max,
+        suhuS2Min: d.suhu_s2_min, suhuS2Max: d.suhu_s2_max,
+        suhuS3Min: d.suhu_s3_min, suhuS3Max: d.suhu_s3_max,
+        rhS1Min: d.rh_s1_min,   rhS1Max: d.rh_s1_max,
+        rhS2Min: d.rh_s2_min,   rhS2Max: d.rh_s2_max,
+        rhS3Min: d.rh_s3_min,   rhS3Max: d.rh_s3_max,
+        katS1Min: d.kat_s1_min,
+        katS2Min: d.kat_s2_min,
+        katS3Min: d.kat_s3_min,
+      },
+      referensi: d.referensi ?? base?.referensi ?? '',
+    }
+  })
 }
 
 /**
@@ -100,10 +164,14 @@ export function useKalenderTanam(tahun: number) {
       setLoading(true)
       setError(null)
       try {
-        const [cfRule, iklimList] = await Promise.all([fetchCfRule(), fetchIklim(tahun)])
+        const [cfRule, iklimList, thresholdList] = await Promise.all([
+          fetchCfRule(),
+          fetchIklim(tahun),
+          fetchThreshold(),
+        ])
         if (cancelled) return
         setIklim(iklimList)
-        setHasil(hitungKalenderTanamLengkap(tahun, iklimList, cfRule))
+        setHasil(hitungKalenderTanamLengkap(tahun, iklimList, cfRule, thresholdList))
       } catch {
         if (!cancelled) setError('Gagal memuat data kalender tanam.')
       } finally {
@@ -135,10 +203,14 @@ export function useRekomendasiBulan(bulanTanam: number, tahunTanam: number, topN
       setLoading(true)
       setError(null)
       try {
-        const [cfRule, iklimList] = await Promise.all([fetchCfRule(), fetchIklim(tahunTanam)])
+        const [cfRule, iklimList, thresholdList] = await Promise.all([
+          fetchCfRule(),
+          fetchIklim(tahunTanam),
+          fetchThreshold(),
+        ])
         if (cancelled) return
         setAdaData(iklimList.length > 0)
-        setHasil(rekomendasiBulan(bulanTanam, tahunTanam, iklimList, cfRule, topN))
+        setHasil(rekomendasiBulan(bulanTanam, tahunTanam, iklimList, cfRule, topN, thresholdList))
       } catch {
         if (!cancelled) setError('Gagal memuat data rekomendasi.')
       } finally {
@@ -184,7 +256,7 @@ export function useTahunPrediksi() {
 /**
  * Hook CF satu tanaman (by nama) untuk bulan tanam tertentu.
  * Dipakai halaman Library: menampilkan badge kecocokan bila tanaman
- * ada di knowledge base (10 tanaman utama). Mengembalikan null jika tidak.
+ * ada di knowledge base (9 tanaman strategis). Mengembalikan null jika tidak.
  */
 export function useCfTanaman(nama: string | undefined, bulanTanam: number, tahunTanam: number) {
   const [hasil, setHasil] = useState<HasilKalenderTanam | null>(null)

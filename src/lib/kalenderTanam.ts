@@ -11,19 +11,22 @@
  *
  * Certainty Factor:
  *   - Tiap parameter (CH/suhu/RH/KAT) memiliki CF[rule] (keyakinan pakar)
- *     yang TIDAK diturunkan dari kelas kesesuaian (lihat thresholdData.ts).
- *   - CF[evidence] = keyakinan data prediksi BMKG = 0.9
+ *     yang diturunkan dari hierarki kualitas lahan Ritung et al. 2011.
+ *   - CF[evidence] per parameter = kelas kesesuaian threshold Ritung et al. 2011:
+ *       S1 (Sangat Sesuai)  → +1.0
+ *       S2 (Cukup Sesuai)   →  0.6
+ *       S3 (Marginal)       →  0.3
+ *       N  (Tidak Sesuai)   → -0.8  (bukan -1.0, lihat komentar CF_EVIDENCE_KELAS)
  *   - Aturan menyala:
- *       parameter MENDUKUNG (dalam rentang sesuai) → +CF[rule]×CF[evidence]
- *       parameter MENGHAMBAT (di luar rentang / N)  → −CF[rule]×CF[evidence]
- *   - Kombinasi CF antar-parameter & antar-fase memakai rumus MYCIN
- *     (Shortliffe & Buchanan, 1975).
+ *       CF parameter = CF[rule] × CF[evidence]
+ *   - Kombinasi CF antar-parameter & antar-fase memakai weighted average
+ *     dan rumus MYCIN (Shortliffe & Buchanan, 1975).
  *
  * Knowledge Base (basis aturan):
  *   [1] Oldeman, L.R. 1975. An Agroclimatic Classification of the
  *       Environments in Indonesia. CRIA, Bogor. (threshold CH BB/BL/BK)
- *   [2] Djaenudin et al. 2011. Petunjuk Teknis Evaluasi Lahan Untuk
- *       Komoditas Pertanian. Edisi Revisi. Kementan, Bogor. (suhu/RH/KAT)
+ *   [2] Ritung, S. et al. 2011. Petunjuk Teknis Evaluasi Lahan Untuk
+ *       Komoditas Pertanian. Edisi Revisi. BBSDLP, Bogor. (suhu/RH/KAT)
  *   [3] Allen et al. 1998. FAO Irrigation Drainage Paper No.56 Table 11.
  *       (fase & durasi tumbuh)
  *
@@ -118,7 +121,7 @@ export const KELAS_BORDER: Record<KelasKesesuaian, string> = {
 }
 
 /**
- * Pemetaan 4 kelas kesesuaian (Djaenudin/FAO) → 3 label user.
+ * Pemetaan 4 kelas kesesuaian (Ritung et al. 2011 / FAO) → 3 label user.
  * S1 → cocok | S2 → cukup | S3 & N → tidak disarankan
  */
 export function keLabelUser(kelas: KelasKesesuaian): LabelUser {
@@ -147,7 +150,7 @@ export const LABEL_USER_BORDER: Record<LabelUser, string> = {
 
 // ─── Fungsi Utilitas: Evaluasi Kelas Kesesuaian Lahan ─────────────────────────
 //
-// Tiap parameter dievaluasi terhadap threshold tanaman (Djaenudin 2011 untuk
+// Tiap parameter dievaluasi terhadap threshold tanaman (Ritung et al. 2011 untuk
 // suhu/RH/KAT, Oldeman 1975 untuk CH) dan diklasifikasikan ke kelas
 // kesesuaian lahan: S1 (Sangat Sesuai), S2 (Cukup), S3 (Marginal), N (Tidak).
 //
@@ -192,7 +195,7 @@ function evaluasiKat(kat: number | undefined, t: TanamanThreshold['threshold']):
 
 /**
  * CF[evidence] bertingkat sesuai derajat kecocokan fakta terhadap syarat
- * tumbuh (hasil evaluasi kelas kesesuaian lahan Djaenudin 2011 / Oldeman 1975).
+ * tumbuh (hasil evaluasi kelas kesesuaian lahan Ritung et al. 2011 / Oldeman 1975).
  *
  *   S1 (Sangat Sesuai)  →  1.0  (bukti mendukung penuh)
  *   S2 (Cukup Sesuai)   →  0.6  (bukti mendukung sebagian)
@@ -206,7 +209,7 @@ function evaluasiKat(kat: number | undefined, t: TanamanThreshold['threshold']):
  * untuk kondisi yang bersifat mematikan (lethal), bukan sekadar di luar
  * rentang optimal. Untuk evaluasi kesesuaian lahan, -0.8 lebih tepat.
  *
- * Ref: Shortliffe & Buchanan (1975); Djaenudin et al. (2011).
+ * Ref: Shortliffe & Buchanan (1975); Ritung et al. (2011).
  */
 const CF_EVIDENCE_KELAS: Record<KelasKesesuaian, number> = {
   S1:  1.0,
@@ -241,7 +244,7 @@ function cfParameter(kelas: KelasKesesuaian, cfRule: number): number {
  *   Semua N  → cfFase = -0.8   → "tidak"
  *
  * Tidak memakai penjumlahan MYCIN antar parameter agar nilai tidak jenuh ke 1.0.
- * Ref: Shortliffe & Buchanan (1975); adaptasi kesesuaian lahan Djaenudin et al. (2011).
+ * Ref: Shortliffe & Buchanan (1975); adaptasi kesesuaian lahan Ritung et al. (2011).
  */
 function cfGabunganFase(
   cfParams: { cf: number; bobot: number; evidence: number }[]
@@ -283,7 +286,7 @@ export function kombinasiCF(cf1: number, cf2: number): number {
  *   CF < 0.40         → Tidak Disarankan (keyakinan rendah/negatif)
  *
  * Ambang ini mengikuti pembagian interval derajat keyakinan yang umum
- * dipakai pada penerapan Certainty Factor (Shortliffe & Buchanan, 1975),
+ * dipakai pada penerapan Certainty Factor di Indonesia (Kusrini, 2008),
  * di mana CF tinggi mencerminkan kondisi mendekati Sangat Sesuai (S1) dan
  * CF rendah mencerminkan kondisi marginal/tidak sesuai (S3/N).
  */
@@ -415,16 +418,19 @@ export function hitungKalenderTanam(
 }
 
 /**
- * Hitung kalender tanam untuk semua 10 tanaman dan semua 12 bulan tanam.
+ * Hitung kalender tanam untuk semua tanaman dan semua 12 bulan tanam.
  *
- * @param tahun    - Tahun yang dievaluasi
- * @param iklimList - Array data iklim (prediksi BMKG)
+ * @param tahun         - Tahun yang dievaluasi
+ * @param iklimList     - Array data iklim (prediksi BMKG)
+ * @param cfRule        - Nilai CF[rule] per parameter
+ * @param thresholdList - Knowledge base tanaman (opsional, default THRESHOLD_TANAMAN)
  * @returns Map<namaTanaman, Map<bulanTanam, HasilKalenderTanam>>
  */
 export function hitungKalenderTanamLengkap(
   tahun: number,
   iklimList: IklimBulan[],
-  cfRule: CfRule = DEFAULT_CF_RULE
+  cfRule: CfRule = DEFAULT_CF_RULE,
+  thresholdList: TanamanThreshold[] = THRESHOLD_TANAMAN
 ): Map<string, Map<number, HasilKalenderTanam>> {
   // Buat iklimMap dari list
   const iklimMap = new Map<string, IklimBulan>()
@@ -434,7 +440,7 @@ export function hitungKalenderTanamLengkap(
 
   const hasil = new Map<string, Map<number, HasilKalenderTanam>>()
 
-  for (const tanaman of THRESHOLD_TANAMAN) {
+  for (const tanaman of thresholdList) {
     const bulanMap = new Map<number, HasilKalenderTanam>()
     for (let bulan = 1; bulan <= 12; bulan++) {
       bulanMap.set(bulan, hitungKalenderTanam(tanaman, bulan, tahun, iklimMap, cfRule))
@@ -499,7 +505,7 @@ export function ringkasanKalenderTanam(
 
 /**
  * Cari hasil CF satu tanaman (by nama) untuk satu bulan tanam.
- * Mengembalikan null jika tanaman tidak ada di knowledge base (10 tanaman).
+ * Mengembalikan null jika tanaman tidak ada di knowledge base (9 tanaman).
  * Dipakai oleh halaman Library untuk menampilkan badge kecocokan.
  */
 export function hitungTanamanByNama(
@@ -524,22 +530,24 @@ export function hitungTanamanByNama(
  * Menggunakan engine & knowledge base yang SAMA dengan kalender tanam
  * (Forward Chaining + Certainty Factor) — tidak ada engine terpisah.
  *
- * @param bulanTanam - bulan tanam (1-12)
- * @param tahunTanam - tahun tanam
- * @param iklimList  - data prediksi iklim BMKG
- * @param cfRule     - nilai CF[rule] (opsional, default dari literatur)
- * @param topN       - jumlah tanaman teratas yang dikembalikan (0 = semua)
+ * @param bulanTanam    - bulan tanam (1-12)
+ * @param tahunTanam    - tahun tanam
+ * @param iklimList     - data prediksi iklim BMKG
+ * @param cfRule        - nilai CF[rule] (opsional, default dari literatur)
+ * @param topN          - jumlah tanaman teratas yang dikembalikan (0 = semua)
+ * @param thresholdList - knowledge base tanaman (opsional, default THRESHOLD_TANAMAN)
  */
 export function rekomendasiBulan(
   bulanTanam: number,
   tahunTanam: number,
   iklimList: IklimBulan[],
   cfRule: CfRule = DEFAULT_CF_RULE,
-  topN = 0
+  topN = 0,
+  thresholdList: TanamanThreshold[] = THRESHOLD_TANAMAN
 ): HasilKalenderTanam[] {
   const iklimMap = buatIklimMap(iklimList)
 
-  const semua = THRESHOLD_TANAMAN.map(tanaman =>
+  const semua = thresholdList.map(tanaman =>
     hitungKalenderTanam(tanaman, bulanTanam, tahunTanam, iklimMap, cfRule)
   )
 
