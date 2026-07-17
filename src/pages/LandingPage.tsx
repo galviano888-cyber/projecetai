@@ -375,13 +375,18 @@ export default function LandingPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-4 pt-8">
                   <div className="aspect-square rounded-3xl overflow-hidden shadow-2xl hover:scale-105 transition-transform">
-                    <img src="/sawah_padi.webp" alt="Lahan Pertanian Padi" loading="lazy" className="w-full h-full object-cover" />
+                    <img src="/sawah_padi.webp" alt="Padi Sawah Demak" loading="lazy" className="w-full h-full object-cover" />
                   </div>
                   <div className="aspect-video rounded-3xl overflow-hidden shadow-2xl hover:scale-105 transition-transform">
-                    <img src="/panen_sayuran.webp" alt="Panen Sayuran" loading="lazy" className="w-full h-full object-cover" />
+                    <img src="/cabai.webp" alt="Cabai Keriting & Rawit" loading="lazy" className="w-full h-full object-cover" />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="aspect-video rounded-3xl overflow-hidden shadow-2xl hover:scale-105 transition-transform">
+                    <img src="/panen_sayuran.webp" alt="Panen Sayuran Demak" loading="lazy" className="w-full h-full object-cover" />
                   </div>
                   <div className="aspect-square rounded-3xl overflow-hidden shadow-2xl hover:scale-105 transition-transform">
-                    <img src="/panen_sayuran.webp" alt="Hortikultura Demak" loading="lazy" className="w-full h-full object-cover" />
+                    <img src="/hero-rice-field.webp" alt="Lahan Pertanian Demak" loading="lazy" className="w-full h-full object-cover" />
                   </div>
                 </div>
               </div>
