@@ -178,8 +178,14 @@ export function useKalenderTanam(tahun: number) {
           fetchThreshold(),
         ])
         if (cancelled) return
+        console.log('[Kalender] cfRule:', cfRule)
+        console.log('[Kalender] iklimList length:', iklimList.length)
+        console.log('[Kalender] thresholdList:', thresholdList.map(t => t.nama))
         setIklim(iklimList)
-        setHasil(hitungKalenderTanamLengkap(tahun, iklimList, cfRule, thresholdList))
+        const hasilData = hitungKalenderTanamLengkap(tahun, iklimList, cfRule, thresholdList)
+        console.log('[Kalender] hasil computed, tanaman:', Array.from(hasilData.keys()))
+        if (cancelled) return
+        setHasil(hasilData)
       } catch (err) {
         console.error('Error useKalenderTanam:', err)
         if (!cancelled) setError('Gagal memuat data kalender tanam.')
