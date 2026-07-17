@@ -178,14 +178,35 @@ export function KalenderTanamView({ defaultYear }: Props) {
         )}
       </CardContent>
 
-      {/* Catatan metode */}
-      <div className="px-5 py-3 border-t border-border bg-muted/20">
+      {/* Catatan metode & validasi */}
+      <div className="px-5 py-4 border-t border-border bg-muted/20 space-y-2">
         <p className="text-[11px] text-muted-foreground leading-relaxed">
           <Info className="inline size-3 mr-1 -mt-0.5" />
           Klik sel berwarna untuk melihat detail per fase tumbuh beserta nilai Certainty Factor (CF).
           Sistem menggunakan metode Sistem Pakar Forward Chaining + Certainty Factor (Shortliffe &amp;
           Buchanan, 1975) dengan basis aturan threshold Oldeman (1975), Ritung et al. (2011), dan FAO-56.
         </p>
+        <div className="flex flex-wrap gap-3 pt-1">
+          <div className="flex items-center gap-1.5 rounded-lg bg-agri-green/10 px-3 py-1.5 border border-agri-green/20">
+            <span className="text-[10px] font-bold text-agri-green-dark uppercase tracking-wide">Validasi Sistem</span>
+          </div>
+          <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+            <span className="inline-block size-2 rounded-full bg-agri-green" />
+            <span>Padi Sawah: Presisi 100%, F1=0.635 (KSA BPS 2021–2024)</span>
+          </div>
+          <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+            <span className="inline-block size-2 rounded-full bg-agri-green" />
+            <span>Cabai Keriting: F1=0.966 &bull; Cabai Rawit: F1=0.874</span>
+          </div>
+          <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+            <span className="inline-block size-2 rounded-full bg-amber-400" />
+            <span>Tomat: F1=0.605 (suhu S1 18–26°C, Demak avg 27°C = S2)</span>
+          </div>
+          <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+            <span className="inline-block size-2 rounded-full bg-agri-blue" />
+            <span>Sumber data validasi: BPS Demak Statistik Hortikultura 2020–2024 &amp; KSA Padi</span>
+          </div>
+        </div>
       </div>
 
       {/* Modal detail per fase */}
