@@ -144,7 +144,7 @@ export function KalenderTanamView({ defaultYear }: Props) {
                       const h = bulanMap.get(bulan)
                       if (!h) return <td key={i} />
 
-                      const adaDataBulan = adaData && h.detail.some(d => d.dataAda)
+                      const adaDataBulan = adaData && h.dataLengkap
                       const label = h.labelUser
 
                       return (
